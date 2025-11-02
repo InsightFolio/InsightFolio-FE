@@ -1,0 +1,32 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.label {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #206f27;
+}
+
+.input {
+  max-width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #d7dce0;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input:focus {
+  border-color: #206f27;
+  box-shadow: 0 0 0 3px rgba(32, 111, 39, 0.18);
+  outline: none;
+}
+
+.helper {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #7a889d;
+}
