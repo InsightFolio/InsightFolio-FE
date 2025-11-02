@@ -1,0 +1,40 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  color: #1f2d3d;
+}
+
+.header {
+  text-align: left;
+  margin-bottom: 0.5rem;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 1.65rem;
+  color: #1f2d3d;
+}
+
+.header p {
+  margin: 0.5rem 0 0;
+  font-size: 0.95rem;
+  color: #6c7a8a;
+}
+
+.footer {
+  margin: 1.5rem 0 0;
+  text-align: center;
+  font-size: 0.9rem;
+  color: #6c7a8a;
+}
+
+.footer a {
+  color: #206f27;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.footer a:hover {
+  text-decoration: underline;
+}
