@@ -40,7 +40,7 @@ const SignUpForm = () => (
       autoComplete="new-password"
     />
 
-    <PrimaryButton type="button">Sign Up</PrimaryButton>
+    <PrimaryButton type="button" style={{ marginTop: "1.5rem" }}>Sign Up</PrimaryButton>
 
     <p className={styles.footer}>
       Already have an account? <a href="#login">Log in</a>
