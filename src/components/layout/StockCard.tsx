@@ -1,4 +1,5 @@
 import React from 'react';
+import { TrendingUp, TrendingDown } from 'lucide-react';
 import './StockCard.css';
 
 export type StockCardProps = {
@@ -19,15 +20,9 @@ const StockCard: React.FC<StockCardProps> = ({
   const isPositive = change >= 0;
   const changeSign = isPositive ? '+' : '';
   const trendIcon = isPositive ? (
-    <svg className="stock-card__trend-icon" viewBox="0 0 24 24" aria-hidden="true">
-      <polyline points="3 15 9 9 13 13 21 5" />
-      <polyline points="17 5 21 5 21 9" />
-    </svg>
+    <TrendingUp className="stock-card__trend-icon" aria-hidden="true" />
   ) : (
-    <svg className="stock-card__trend-icon" viewBox="0 0 24 24" aria-hidden="true">
-      <polyline points="3 9 9 15 13 11 21 19" />
-      <polyline points="17 19 21 19 21 15" />
-    </svg>
+    <TrendingDown className="stock-card__trend-icon" aria-hidden="true" />
   );
 
   return (
@@ -53,4 +48,3 @@ const StockCard: React.FC<StockCardProps> = ({
 };
 
 export default StockCard;
-

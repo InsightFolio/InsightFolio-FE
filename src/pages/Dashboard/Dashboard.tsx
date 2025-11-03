@@ -1,4 +1,5 @@
 import React from 'react';
+import { Search } from 'lucide-react';
 import TopNav from '../../components/layout/TopNav';
 import StockCard, { StockCardProps } from '../../components/layout/StockCard';
 import './Dashboard.css';
@@ -26,16 +27,7 @@ const Dashboard: React.FC = () => {
           </p>
           <div className="dashboard__search">
             <span className="dashboard__search-icon" aria-hidden="true">
-              <svg
-                className="dashboard__search-icon-svg"
-                viewBox="0 0 24 24"
-                role="img"
-                focusable="false"
-                aria-hidden="true"
-              >
-                <circle cx="11" cy="11" r="6.5" />
-                <line x1="16" y1="16" x2="21" y2="21" />
-              </svg>
+              <Search className="dashboard__search-icon-svg" />
             </span>
             <input
               className="dashboard__search-input"
