@@ -1,4 +1,5 @@
 import React from 'react';
+import TopNav from '../../components/layout/TopNav';
 import './Dashboard.css';
 
 type Stock = {
@@ -21,38 +22,7 @@ const popularStocks: Stock[] = [
 const Dashboard: React.FC = () => {
   return (
     <div className="dashboard">
-      <header className="dashboard__topbar">
-        <div className="dashboard__nav-group">
-          <div className="dashboard__brand">
-            Insight<span>Folio</span>
-          </div>
-          <nav className="dashboard__nav">
-            <a href="#" className="dashboard__nav-link dashboard__nav-link--active">
-              Dashboard
-            </a>
-            <a href="#" className="dashboard__nav-link">
-              Portfolio
-            </a>
-            <a href="#" className="dashboard__nav-link">
-              Watchlist
-            </a>
-          </nav>
-        </div>
-        <button className="dashboard__logout" type="button">
-          <svg
-            className="dashboard__logout-icon"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-            focusable="false"
-          >
-            <path d="M15 17l5-5-5-5" />
-            <path d="M20 12H9" />
-            <path d="M12 19H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h7" />
-          </svg>
-          <span>Logout</span>
-        </button>
-      </header>
-
+      <TopNav />
       <main className="dashboard__content">
         <section className="dashboard__hero">
           <h1 className="dashboard__title">Search Stocks</h1>
@@ -117,10 +87,12 @@ const Dashboard: React.FC = () => {
                       {trendIcon}
                     </span>
                   </header>
-                  <div className="stock-card__price">${stock.price.toFixed(2)}</div>
-                  <div className="stock-card__change">
-                    <span>{`${changeSign}${stock.change.toFixed(2)}`}</span>
-                    <span>{`${changeSign}${stock.changePercent.toFixed(2)}%`}</span>
+                  <div className="stock-card__metrics">
+                    <div className="stock-card__price">${stock.price.toFixed(2)}</div>
+                    <div className="stock-card__change">
+                      <span>{`${changeSign}${stock.change.toFixed(2)}`}</span>
+                      <span>{`${changeSign}${stock.changePercent.toFixed(2)}%`}</span>
+                    </div>
                   </div>
                 </article>
               );
