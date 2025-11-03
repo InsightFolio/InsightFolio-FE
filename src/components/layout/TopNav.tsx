@@ -1,4 +1,5 @@
 import React from 'react';
+import { LogOut } from 'lucide-react';
 import './TopNav.css';
 
 const TopNav: React.FC = () => {
@@ -24,16 +25,7 @@ const TopNav: React.FC = () => {
         </div>
 
         <button className="top-nav__logout" type="button">
-          <svg
-            className="top-nav__logout-icon"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-            focusable="false"
-          >
-            <path d="M15 17l5-5-5-5" />
-            <path d="M20 12H9" />
-            <path d="M12 19H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h7" />
-          </svg>
+          <LogOut className="top-nav__logout-icon" aria-hidden="true" />
           <span>Logout</span>
         </button>
       </div>
