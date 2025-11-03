@@ -1,6 +1,7 @@
 import TextField from '../../components/form/TextField';
 import PrimaryButton from '../../components/form/PrimaryButton';
 import styles from './SignUpForm.module.css';
+import { Link } from 'react-router-dom';
 
 const SignUpForm = () => (
   <form className={styles.form} noValidate>
@@ -43,7 +44,7 @@ const SignUpForm = () => (
     <PrimaryButton type="button" style={{ marginTop: "1.5rem" }}>Sign Up</PrimaryButton>
 
     <p className={styles.footer}>
-      Already have an account? <a href="#login">Log in</a>
+      Already have an account? <Link to="/login">Log in</Link>
     </p>
   </form>
 );
