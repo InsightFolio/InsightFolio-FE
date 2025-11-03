@@ -1,14 +1,9 @@
 import React from 'react';
 import TopNav from '../../components/layout/TopNav';
+import StockCard, { StockCardProps } from '../../components/layout/StockCard';
 import './Dashboard.css';
 
-type Stock = {
-  symbol: string;
-  company: string;
-  price: number;
-  change: number;
-  changePercent: number;
-};
+type Stock = StockCardProps;
 
 const popularStocks: Stock[] = [
   { symbol: 'AAPL', company: 'Apple Inc.', price: 178.45, change: 2.35, changePercent: 1.33 },
@@ -58,45 +53,9 @@ const Dashboard: React.FC = () => {
           </header>
 
           <div className="dashboard__grid">
-            {popularStocks.map((stock) => {
-              const isPositive = stock.change >= 0;
-              const changeSign = isPositive ? '+' : '';
-              const trendIcon = isPositive ? (
-                <svg className="stock-card__trend-icon" viewBox="0 0 24 24" aria-hidden="true">
-                  <polyline points="3 15 9 9 13 13 21 5" />
-                  <polyline points="17 5 21 5 21 9" />
-                </svg>
-              ) : (
-                <svg className="stock-card__trend-icon" viewBox="0 0 24 24" aria-hidden="true">
-                  <polyline points="3 9 9 15 13 11 21 19" />
-                  <polyline points="17 19 21 19 21 15" />
-                </svg>
-              );
-
-              return (
-                <article
-                  key={stock.symbol}
-                  className={`stock-card ${isPositive ? 'stock-card--up' : 'stock-card--down'}`}
-                >
-                  <header className="stock-card__header">
-                    <div>
-                      <h3 className="stock-card__symbol">{stock.symbol}</h3>
-                      <p className="stock-card__company">{stock.company}</p>
-                    </div>
-                    <span className="stock-card__trend" aria-hidden="true">
-                      {trendIcon}
-                    </span>
-                  </header>
-                  <div className="stock-card__metrics">
-                    <div className="stock-card__price">${stock.price.toFixed(2)}</div>
-                    <div className="stock-card__change">
-                      <span>{`${changeSign}${stock.change.toFixed(2)}`}</span>
-                      <span>{`${changeSign}${stock.changePercent.toFixed(2)}%`}</span>
-                    </div>
-                  </div>
-                </article>
-              );
-            })}
+            {popularStocks.map((stock) => (
+              <StockCard key={stock.symbol} {...stock} />
+            ))}
           </div>
         </section>
       </main>
