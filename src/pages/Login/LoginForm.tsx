@@ -1,34 +1,64 @@
-import TextField from "../../components/form/TextField";
-import PrimaryButton from "../../components/form/PrimaryButton";
+import { useForm } from 'react-hook-form';
+import TextField from '../../components/form/TextField';
+import PrimaryButton from '../../components/form/PrimaryButton';
 import styles from './LoginForm.module.css';
-import { Link } from "react-router-dom";
+import { Link } from 'react-router-dom';
 
-const LoginForm = () => (
-    <form className={styles.form} noValidate>
-        <header className={styles.header}>
-            <h1>Log in to your account</h1>
-        </header>
+type LoginValues = {
+  username: string;
+  password: string;
+};
 
-        <TextField
-            label="Username (or Email)"
-            name="username"
-            placeholder="john@example.com"
-        />
+const LoginForm = () => {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginValues>();
 
-        <TextField
-            label="Password"
-            name="password"
-            type="password"
-            placeholder="••••••••"
-            autoComplete="current-password"
-        />
+  const onSubmit = async (values: LoginValues) => {
+    // TODO: Call your API here
+    console.log('Login values:', values);
+    // Example: await login(values);
+  };
 
-        <PrimaryButton type="button" style={{ marginTop: "1.5rem" }}>Log In</PrimaryButton>
+  return (
+    <form className={styles.form} noValidate onSubmit={handleSubmit(onSubmit)}>
+      <header className={styles.header}>
+        <h1>Log in to your account</h1>
+      </header>
 
-        <p className={styles.footer}>
-            Don't have an account? <Link to="/signup">Sign up</Link>
-        </p>
+      <TextField
+        label="Username (or Email)"
+        placeholder="john@example.com"
+        error={!!errors.username}
+        helperText={errors.username?.message}
+        {...register('username', {
+          required: 'This field is mandatory',
+        })}
+      />
+
+      <TextField
+        label="Password"
+        type="password"
+        placeholder="••••••••"
+        autoComplete="current-password"
+        error={!!errors.password}
+        helperText={errors.password?.message}
+        {...register('password', {
+          required: 'This field is mandatory',
+        })}
+      />
+
+      <PrimaryButton type="submit" style={{ marginTop: '1.5rem' }} disabled={isSubmitting}>
+        {isSubmitting ? 'Logging in...' : 'Log In'}
+      </PrimaryButton>
+
+      <p className={styles.footer}>
+        Don't have an account? <Link to="/signup">Sign up</Link>
+      </p>
     </form>
-);
+  );
+};
 
 export default LoginForm;
