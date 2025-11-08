@@ -30,3 +30,16 @@
   font-size: 0.82rem;
   color: #7a889d;
 }
+
+.inputError {
+  border-color: #dc2626;
+}
+
+.inputError:focus {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.18);
+}
+
+.helperError {
+  color: #dc2626;
+}
