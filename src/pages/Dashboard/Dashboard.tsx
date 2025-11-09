@@ -1,7 +1,8 @@
 import React from 'react';
 import { Search } from 'lucide-react';
 import TopNav from '../../components/layout/TopNav';
-import StockCard, { StockCardProps } from '../../components/layout/StockCard';
+import StockSection from '../../components/layout/StockSection';
+import type { StockCardProps } from '../../components/layout/StockCard';
 import './Dashboard.css';
 
 type Stock = StockCardProps;
@@ -13,6 +14,19 @@ const popularStocks: Stock[] = [
   { symbol: 'AMZN', company: 'Amazon.com Inc.', price: 178.25, change: 3.45, changePercent: 1.97 },
   { symbol: 'TSLA', company: 'Tesla Inc.', price: 248.5, change: -4.2, changePercent: -1.66 },
   { symbol: 'META', company: 'Meta Platforms Inc.', price: 498.75, change: 8.9, changePercent: 1.82 }
+];
+
+const topScoreStocks: Stock[] = [
+  { symbol: 'NVDA', company: 'NVIDIA Corp.', price: 842.22, change: 6.42, changePercent: 0.77 },
+  { symbol: 'AMD', company: 'Advanced Micro Devices', price: 158.12, change: -1.12, changePercent: -0.71 },
+  { symbol: 'NFLX', company: 'Netflix Inc.', price: 612.45, change: 5.31, changePercent: 0.87 },
+  { symbol: 'PYPL', company: 'PayPal Holdings', price: 72.58, change: -0.65, changePercent: -0.89 },
+  { symbol: 'ADBE', company: 'Adobe Inc.', price: 528.44, change: 3.24, changePercent: 0.62 },
+  { symbol: 'CRM', company: 'Salesforce Inc.', price: 286.13, change: 1.12, changePercent: 0.39 },
+  { symbol: 'AVGO', company: 'Broadcom Inc.', price: 1362.32, change: 12.45, changePercent: 0.92 },
+  { symbol: 'COST', company: 'Costco Wholesale', price: 723.75, change: 4.11, changePercent: 0.57 },
+  { symbol: 'MA', company: 'Mastercard Inc.', price: 485.2, change: -2.34, changePercent: -0.48 },
+  { symbol: 'UNH', company: 'UnitedHealth Group', price: 533.17, change: 3.76, changePercent: 0.71 }
 ];
 
 const Dashboard: React.FC = () => {
@@ -38,18 +52,9 @@ const Dashboard: React.FC = () => {
           </div>
         </section>
 
-        <section className="dashboard__section">
-          <header className="dashboard__section-header">
-            <h2 className="dashboard__section-title">Popular Stocks</h2>
-            <span className="dashboard__section-meta">{popularStocks.length} stocks</span>
-          </header>
+        <StockSection title="Popular Stocks" stocks={popularStocks} />
 
-          <div className="dashboard__grid">
-            {popularStocks.map((stock) => (
-              <StockCard key={stock.symbol} {...stock} />
-            ))}
-          </div>
-        </section>
+        <StockSection title="Top 10 Stocks by Score" stocks={topScoreStocks} />
       </main>
     </div>
   );
