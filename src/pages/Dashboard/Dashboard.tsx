@@ -3,6 +3,7 @@ import { Search } from 'lucide-react';
 import TopNav from '../../components/layout/TopNav';
 import StockSection from '../../components/layout/StockSection';
 import type { StockCardProps } from '../../components/layout/StockCard';
+import FilterButton from '../../components/form/FilterButton';
 import './Dashboard.css';
 
 type Stock = StockCardProps;
@@ -50,6 +51,7 @@ const Dashboard: React.FC = () => {
               aria-label="Search stocks"
             />
           </div>
+          <FilterButton />
         </section>
 
         <StockSection title="Popular Stocks" stocks={popularStocks} />

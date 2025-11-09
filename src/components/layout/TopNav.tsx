@@ -1,8 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { LogOut } from 'lucide-react';
+import NavButton from '../form/NavButton';
 import './TopNav.css';
 
+type Page = 'dashboard' | 'portfolio' | 'watchlist';
+
 const TopNav: React.FC = () => {
+  const [activePage, setActivePage] = useState<Page>('dashboard');
+
   return (
     <header className="top-nav">
       <div className="top-nav__inner">
@@ -12,15 +17,24 @@ const TopNav: React.FC = () => {
           </div>
 
           <nav className="top-nav__links" aria-label="Primary">
-            <a href="#" className="top-nav__link top-nav__link--active">
+            <NavButton 
+              active={activePage === 'dashboard'}
+              onClick={() => setActivePage('dashboard')}
+            >
               Dashboard
-            </a>
-            <a href="#" className="top-nav__link">
+            </NavButton>
+            <NavButton 
+              active={activePage === 'portfolio'}
+              onClick={() => setActivePage('portfolio')}
+            >
               Portfolio
-            </a>
-            <a href="#" className="top-nav__link">
+            </NavButton>
+            <NavButton 
+              active={activePage === 'watchlist'}
+              onClick={() => setActivePage('watchlist')}
+            >
               Watchlist
-            </a>
+            </NavButton>
           </nav>
         </div>
 
