@@ -1,8 +1,10 @@
 import React from 'react';
 import { LogOut } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import './TopNav.css';
 
 const TopNav: React.FC = () => {
+  const navigate = useNavigate();
   return (
     <header className="top-nav">
       <div className="top-nav__inner">
@@ -24,7 +26,11 @@ const TopNav: React.FC = () => {
           </nav>
         </div>
 
-        <button className="top-nav__logout" type="button">
+        <button
+          className="top-nav__logout"
+          type="button"
+          onClick={() => navigate('/login')}
+        >
           <LogOut className="top-nav__logout-icon" aria-hidden="true" />
           <span>Logout</span>
         </button>

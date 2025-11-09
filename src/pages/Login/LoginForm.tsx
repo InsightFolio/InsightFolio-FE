@@ -2,7 +2,7 @@ import { useForm } from 'react-hook-form';
 import TextField from '../../components/form/TextField';
 import PrimaryButton from '../../components/form/PrimaryButton';
 import styles from './LoginForm.module.css';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 type LoginValues = {
@@ -17,6 +17,8 @@ const LoginForm = () => {
     formState: { errors, isSubmitting },
   } = useForm<LoginValues>();
 
+  const navigate = useNavigate();
+
   const onSubmit = async (values: LoginValues) => {
     try {
 
@@ -26,6 +28,7 @@ const LoginForm = () => {
       })
 
       console.log('Login success:', response.data);
+      navigate('/dashboard');
 
     } catch (error) {
       console.error('Login failed:', error)
