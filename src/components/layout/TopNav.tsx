@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { LogOut } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import NavButton from '../form/NavButton';
 import './TopNav.css';
 
 type Page = 'dashboard' | 'portfolio' | 'watchlist';
 
 const TopNav: React.FC = () => {
+  const navigate = useNavigate();
   const [activePage, setActivePage] = useState<Page>('dashboard');
 
   return (
@@ -38,7 +40,11 @@ const TopNav: React.FC = () => {
           </nav>
         </div>
 
-        <button className="top-nav__logout" type="button">
+        <button
+          className="top-nav__logout"
+          type="button"
+          onClick={() => navigate('/login')}
+        >
           <LogOut className="top-nav__logout-icon" aria-hidden="true" />
           <span>Logout</span>
         </button>
