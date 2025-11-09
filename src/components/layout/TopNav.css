@@ -92,20 +92,36 @@
   }
 
   .top-nav__inner {
-    flex-direction: column;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
     align-items: flex-start;
     gap: 16px;
   }
 
   .top-nav__group {
-    flex-direction: column;
-    align-items: flex-start;
+    flex-direction: row;
+    align-items: center;
     gap: 16px;
-    width: 100%;
+    width: 80%;
+  }
+
+  .top-nav__logout {
+    padding: 6px;
+  }
+
+  .top-nav__logout span {
+    display: none;
   }
 
   .top-nav__links {
     width: 100%;
     gap: 12px;
+    justify-content: center;
+    text-align: center;
+  }
+  
+  .top-nav__brand {
+    display: none;
   }
 }
