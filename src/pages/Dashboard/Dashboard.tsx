@@ -40,18 +40,20 @@ const Dashboard: React.FC = () => {
           <p className="dashboard__subtitle">
             Find real-time stock prices, trends, and market data.
           </p>
-          <div className="dashboard__search">
-            <span className="dashboard__search-icon" aria-hidden="true">
-              <Search className="dashboard__search-icon-svg" />
-            </span>
-            <input
-              className="dashboard__search-input"
-              type="search"
-              placeholder="Search by symbol or company name..."
-              aria-label="Search stocks"
-            />
+          <div className="dashboard__search-wrapper">
+            <div className="dashboard__search">
+              <span className="dashboard__search-icon" aria-hidden="true">
+                <Search className="dashboard__search-icon-svg" />
+              </span>
+              <input
+                className="dashboard__search-input"
+                type="search"
+                placeholder="Search by symbol or company name..."
+                aria-label="Search stocks"
+              />
+            </div>
+            <FilterButton />
           </div>
-          <FilterButton />
         </section>
 
         <StockSection title="Popular Stocks" stocks={popularStocks} />

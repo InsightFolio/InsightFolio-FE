@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import NavButton from '../form/NavButton';
+import StyledButton from '../form/StyledButton';
 import './TopNav.css';
 
 type Page = 'dashboard' | 'portfolio' | 'watchlist';
@@ -19,24 +19,24 @@ const TopNav: React.FC = () => {
           </div>
 
           <nav className="top-nav__links" aria-label="Primary">
-            <NavButton 
+            <StyledButton 
               active={activePage === 'dashboard'}
               onClick={() => setActivePage('dashboard')}
             >
               Dashboard
-            </NavButton>
-            <NavButton 
+            </StyledButton>
+            <StyledButton 
               active={activePage === 'portfolio'}
               onClick={() => setActivePage('portfolio')}
             >
               Portfolio
-            </NavButton>
-            <NavButton 
+            </StyledButton>
+            <StyledButton 
               active={activePage === 'watchlist'}
               onClick={() => setActivePage('watchlist')}
             >
               Watchlist
-            </NavButton>
+            </StyledButton>
           </nav>
         </div>
 
