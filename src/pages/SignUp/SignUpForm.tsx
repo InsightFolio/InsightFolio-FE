@@ -3,6 +3,7 @@ import TextField from '../../components/form/TextField';
 import PrimaryButton from '../../components/form/PrimaryButton';
 import styles from './SignUpForm.module.css';
 import { Link } from 'react-router-dom';
+import axios from 'axios';
 
 type SignUpValues = {
   username: string;
@@ -20,9 +21,19 @@ const SignUpForm = () => {
   } = useForm<SignUpValues>();
 
   const onSubmit = async (values: SignUpValues) => {
-    // TODO: Call your API here
-    console.log('Signup values:', values);
-    // Example: await signUp(values);
+    try {
+      
+      const response = await axios.post('http://127.0.0.1:5000/signup', {
+        username: values.username || '',
+        email: values.email,
+        password: values.password
+      })
+
+      console.log('Signup success:', response.data);
+
+    } catch (error) {
+      console.error('Signup failed:', error)
+    }
   };
 
   return (

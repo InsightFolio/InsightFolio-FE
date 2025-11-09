@@ -3,6 +3,7 @@ import TextField from '../../components/form/TextField';
 import PrimaryButton from '../../components/form/PrimaryButton';
 import styles from './LoginForm.module.css';
 import { Link } from 'react-router-dom';
+import axios from 'axios';
 
 type LoginValues = {
   username: string;
@@ -17,9 +18,18 @@ const LoginForm = () => {
   } = useForm<LoginValues>();
 
   const onSubmit = async (values: LoginValues) => {
-    // TODO: Call your API here
-    console.log('Login values:', values);
-    // Example: await login(values);
+    try {
+
+      const response = await axios.post('http://127.0.0.1:5000/login', {
+        username: values.username || undefined,
+        password: values.password
+      })
+
+      console.log('Login success:', response.data);
+
+    } catch (error) {
+      console.error('Login failed:', error)
+    }
   };
 
   return (
