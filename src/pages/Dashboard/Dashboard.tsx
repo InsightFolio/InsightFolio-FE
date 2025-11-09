@@ -1,9 +1,9 @@
-import React from 'react';
-import { Search } from 'lucide-react';
+import React, { useState } from 'react';
 import TopNav from '../../components/layout/TopNav';
 import StockSection from '../../components/layout/StockSection';
 import type { StockCardProps } from '../../components/layout/StockCard';
-import FilterButton from '../../components/form/FilterButton';
+import SearchBar from '../../components/dashboard/SearchBar';
+import ModalContainer from '../../components/ui/ModalContainer';
 import './Dashboard.css';
 
 type Stock = StockCardProps;
@@ -31,6 +31,8 @@ const topScoreStocks: Stock[] = [
 ];
 
 const Dashboard: React.FC = () => {
+  const [isSearchModalOpen, setSearchModalOpen] = useState(false);
+
   return (
     <div className="dashboard">
       <TopNav />
@@ -40,25 +42,19 @@ const Dashboard: React.FC = () => {
           <p className="dashboard__subtitle">
             Find real-time stock prices, trends, and market data.
           </p>
-          <div className="dashboard__search-wrapper">
-            <div className="dashboard__search">
-              <span className="dashboard__search-icon" aria-hidden="true">
-                <Search className="dashboard__search-icon-svg" />
-              </span>
-              <input
-                className="dashboard__search-input"
-                type="search"
-                placeholder="Search by symbol or company name..."
-                aria-label="Search stocks"
-              />
-            </div>
-            <FilterButton />
-          </div>
+          <SearchBar onSubmit={() => setSearchModalOpen(true)} />
         </section>
 
         <StockSection title="Popular Stocks" stocks={popularStocks} />
 
         <StockSection title="Top 10 Stocks by Score" stocks={topScoreStocks} />
+
+        <ModalContainer
+          title="Search Results"
+          isOpen={isSearchModalOpen}
+          onClose={() => setSearchModalOpen(false)}
+        >
+        </ModalContainer>
       </main>
     </div>
   );
