@@ -41,7 +41,9 @@
 
 .dashboard__search {
   margin-top: 16px;
-  width: 100%;
+  width: min(90%, 520px);
+  margin-left: auto;
+  margin-right: auto;
   max-width: 600px;
   background-color: #ffffff;
   border-radius: 12px;
@@ -214,8 +216,8 @@
   }
 
   .dashboard__content {
-    gap: 40px;
-    padding: 0 24px;
+    padding: 0 16px;
+    gap: 32px;
   }
 
   .dashboard__hero {

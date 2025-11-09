@@ -1,7 +1,7 @@
 :root {
   font-family: 'Inter', 'Segoe UI', sans-serif;
   color: #1f2d3d;
-  background-color: #eee4d2;
+  background-color: #f9f6f0;
 }
 
 * {
@@ -10,7 +10,7 @@
 
 body {
   margin: 0;
-  background-color: #eee4d2;
+  background-color: #f9f6f0;
 }
 
 a {

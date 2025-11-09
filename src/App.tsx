@@ -3,7 +3,7 @@ import LandingPage from './pages/LandingPage';
 import Dashboard from './pages/Dashboard/Dashboard';
 import SignUpPage from './pages/SignUp/SignUpPage';
 import LoginPage from './pages/Login/LoginPage';
-
+import './App.css';
 
 const App = () => (
   <BrowserRouter>
