@@ -220,14 +220,10 @@
     gap: 32px;
   }
 
-  .dashboard__hero {
-    align-items: flex-start;
-    text-align: left;
-  }
-
   .dashboard__grid {
     grid-template-columns: repeat(1, minmax(0, 1fr));
   }
+
 }
 
 @media (max-width: 1024px) and (min-width: 769px) {
