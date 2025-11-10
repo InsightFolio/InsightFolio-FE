@@ -1,16 +1,29 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Search } from 'lucide-react';
-import FilterButton from '../form/FilterButton';
+import FilterButton, { FilterValues } from '../form/FilterButton';
 
 type SearchBarProps = {
-  onSubmit?: () => void;
+  onSubmit?: (searchText: string, filters: FilterValues) => void;
 };
 
 const SearchBar: React.FC<SearchBarProps> = ({ onSubmit }) => {
+  const [searchText, setSearchText] = useState('');
+  const [filters, setFilters] = useState<FilterValues>({
+    country: [],
+    min_price: 0,
+    max_price: 0,
+    sector: "",
+    sub_sector: ""
+  });
+
+  const handleSubmit = () => {
+    onSubmit?.(searchText, filters);
+  };
+
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
       event.preventDefault();
-      onSubmit?.();
+      handleSubmit();
     }
   };
 
@@ -25,10 +38,12 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSubmit }) => {
           type="search"
           placeholder="Search by symbol or company name..."
           aria-label="Search stocks"
+          value={searchText}
+          onChange={(e) => setSearchText(e.target.value)}
           onKeyDown={handleKeyDown}
         />
       </div>
-      <FilterButton />
+      <FilterButton onFiltersChange={setFilters} />
     </div>
   );
 };

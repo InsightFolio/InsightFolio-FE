@@ -25,7 +25,7 @@ const SignUpForm = () => {
   const onSubmit = async (values: SignUpValues) => {
     try {
       
-      const response = await axios.post('http://127.0.0.1:5000/signup', {
+      const response = await axios.post('http://127.0.0.1:5001/signup', {
         username: values.username || '',
         email: values.email,
         password: values.password

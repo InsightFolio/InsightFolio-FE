@@ -4,6 +4,8 @@ import StockSection from '../../components/layout/StockSection';
 import type { StockCardProps } from '../../components/layout/StockCard';
 import SearchBar from '../../components/dashboard/SearchBar';
 import ModalContainer from '../../components/ui/ModalContainer';
+import type { FilterValues } from '../../components/form/FilterButton';
+import axios from 'axios';
 import './Dashboard.css';
 
 type Stock = StockCardProps;
@@ -33,6 +35,36 @@ const topScoreStocks: Stock[] = [
 const Dashboard: React.FC = () => {
   const [isSearchModalOpen, setSearchModalOpen] = useState(false);
 
+  const handleSearch = async (searchText: string, filters: FilterValues) => {
+    // Open the modal immediately
+
+    try {
+      // Format the country array to a comma-separated string
+      const countryString = filters.country.join(',');
+
+      const searchPayload = {
+        text: searchText,
+        filters: {
+          country: countryString,
+          min_price: filters.min_price,
+          max_price: filters.max_price,
+          sector: filters.sector,
+          sub_sector: filters.sub_sector
+        }
+      };
+
+      console.log('Sending search request:', searchPayload);
+
+      const response = await axios.post('http://127.0.0.1:5001/search', searchPayload);
+
+      console.log('Search results:', response.data);
+
+      setSearchModalOpen(true);
+    } catch (error) {
+      console.error('Search failed:', error);
+    }
+  };
+
   return (
     <div className="dashboard">
       <TopNav />
@@ -42,7 +74,7 @@ const Dashboard: React.FC = () => {
           <p className="dashboard__subtitle">
             Find real-time stock prices, trends, and market data.
           </p>
-          <SearchBar onSubmit={() => setSearchModalOpen(true)} />
+          <SearchBar onSubmit={handleSearch} />
         </section>
 
         <StockSection title="Popular Stocks" stocks={popularStocks} />

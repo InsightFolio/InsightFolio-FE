@@ -87,3 +87,103 @@
 .filter-option:has(.filter-checkbox:checked) .filter-label:hover {
   background-color: #1c5f22;
 }
+
+/* Filter expansion styles */
+.filter-expansion {
+  padding: 8px 12px 12px 12px;
+  margin-left: 26px;
+  margin-top: 4px;
+  margin-bottom: 8px;
+}
+
+/* Price filter styles */
+.filter-price-inputs {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.filter-price-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-price-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #206f27;
+}
+
+.filter-price-input {
+  width: 80px;
+  padding: 6px 10px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  transition: border-color 0.2s ease;
+}
+
+.filter-price-input:focus {
+  outline: none;
+  border-color: #206f27;
+}
+
+.filter-price-input::placeholder {
+  color: #9ca3af;
+}
+
+/* Country filter styles */
+.filter-country-dropdown-btn {
+  width: 100%;
+  padding: 8px 12px;
+  background-color: #f9fafb;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: border-color 0.2s ease;
+}
+
+.filter-country-dropdown-btn:hover {
+  border-color: #206f27;
+}
+
+.filter-country-list {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.filter-country-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
+}
+
+.filter-country-option:hover {
+  background-color: #f3f4f6;
+}
+
+.filter-country-checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #206f27;
+}
+
+.filter-country-option span {
+  font-size: 0.875rem;
+  color: #374151;
+  user-select: none;
+}
