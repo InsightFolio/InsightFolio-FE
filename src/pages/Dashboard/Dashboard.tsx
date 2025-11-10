@@ -34,9 +34,11 @@ const topScoreStocks: Stock[] = [
 
 const Dashboard: React.FC = () => {
   const [isSearchModalOpen, setSearchModalOpen] = useState(false);
+  const [searchResults, setSearchResults] = useState<Stock[]>([]);
 
   const handleSearch = async (searchText: string, filters: FilterValues) => {
     // Open the modal immediately
+    setSearchModalOpen(true);
 
     try {
       // Format the country array to a comma-separated string
@@ -59,9 +61,19 @@ const Dashboard: React.FC = () => {
 
       console.log('Search results:', response.data);
 
-      setSearchModalOpen(true);
+      // Transform the response data to match StockCardProps format
+      const transformedResults: Stock[] = response.data.map((stock: any) => ({
+        symbol: stock.symbol,
+        company: stock.company,
+        price: stock.price,
+        change: 0, // Not provided by backend, default to 0
+        changePercent: 0 // Not provided by backend, default to 0
+      }));
+
+      setSearchResults(transformedResults);
     } catch (error) {
       console.error('Search failed:', error);
+      setSearchResults([]); // Clear results on error
     }
   };
 
@@ -85,6 +97,7 @@ const Dashboard: React.FC = () => {
           title="Search Results"
           isOpen={isSearchModalOpen}
           onClose={() => setSearchModalOpen(false)}
+          stocks={searchResults}
         >
         </ModalContainer>
       </main>
