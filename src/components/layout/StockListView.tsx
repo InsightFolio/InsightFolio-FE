@@ -11,14 +11,8 @@ const StockListView: React.FC<StockListViewProps> = ({ stocks }) => (
       <span role="columnheader">Symbol</span>
       <span role="columnheader">Company</span>
       <span role="columnheader">Price</span>
-      <span role="columnheader" className="stock-list__cell--change-header">
-        Change
-      </span>
     </div>
     {stocks.map((stock) => {
-      const isPositive = stock.change >= 0;
-      const sign = isPositive ? '+' : '';
-
       return (
         <button
           key={stock.symbol}
@@ -34,14 +28,6 @@ const StockListView: React.FC<StockListViewProps> = ({ stocks }) => (
           </span>
           <span role="cell" className="stock-list__cell stock-list__cell--price">
             ${stock.price.toFixed(2)}
-          </span>
-          <span
-            role="cell"
-            className={`stock-list__cell stock-list__cell--change ${
-              isPositive ? 'stock-list__change--up' : 'stock-list__change--down'
-            }`}
-          >
-            {`${sign}${stock.change.toFixed(2)} (${sign}${stock.changePercent.toFixed(2)}%)`}
           </span>
         </button>
       );
