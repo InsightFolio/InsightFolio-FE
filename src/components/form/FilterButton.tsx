@@ -141,7 +141,7 @@ const FilterButton = ({ type = 'button', onFiltersChange, ...buttonProps }: Filt
               >
                 <span>
                   {filterValues.country.length === 0 
-                    ? 'Select countries...' 
+                    ? 'Select countries' 
                     : `${filterValues.country.length} selected`}
                 </span>
                 <ChevronDown size={16} />

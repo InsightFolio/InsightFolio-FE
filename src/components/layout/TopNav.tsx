@@ -43,7 +43,7 @@ const TopNav: React.FC = () => {
         <button
           className="top-nav__logout"
           type="button"
-          onClick={() => navigate('/login')}
+          onClick={() => navigate('/')}
         >
           <LogOut className="top-nav__logout-icon" aria-hidden="true" />
           <span>Logout</span>
