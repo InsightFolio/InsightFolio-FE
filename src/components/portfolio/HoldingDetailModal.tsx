@@ -17,9 +17,20 @@ type HoldingDetailModalProps = {
   data: PerformancePoint[];
   isOpen: boolean;
   onClose: () => void;
+  onAdd?: (holding: Holding) => void;
+  onRemove?: (holding: Holding) => void;
+  isInHoldings?: boolean;
 };
 
-const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({ holding, data, isOpen, onClose }) => {
+const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({
+  holding,
+  data,
+  isOpen,
+  onClose,
+  onAdd,
+  onRemove,
+  isInHoldings = false
+}) => {
   if (!isOpen || !holding) {
     return null;
   }
@@ -37,6 +48,21 @@ const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({ holding, data, 
             ×
           </button>
         </header>
+
+        {(onAdd || onRemove) && (
+          <div className="portfolio-modal__actions">
+            {isInHoldings && onRemove && (
+              <button type="button" className="portfolio-modal__danger" onClick={() => onRemove(holding)}>
+                Remove / Close position
+              </button>
+            )}
+            {!isInHoldings && onAdd && (
+              <button type="button" className="portfolio-modal__primary" onClick={() => onAdd(holding)}>
+                Add holding
+              </button>
+            )}
+          </div>
+        )}
 
         <div className="portfolio__modal">
           <div className="portfolio__modal-info">

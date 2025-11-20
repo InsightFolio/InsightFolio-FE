@@ -49,6 +49,44 @@
   outline: none;
 }
 
+.portfolio-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.portfolio-modal__danger {
+  border: none;
+  background: rgba(214, 69, 69, 0.12);
+  color: #d64545;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.portfolio-modal__danger:hover,
+.portfolio-modal__danger:focus-visible {
+  background: rgba(214, 69, 69, 0.18);
+  outline: none;
+}
+
+.portfolio-modal__primary {
+  border: none;
+  background: #206f27;
+  color: #ffffff;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.portfolio-modal__primary:hover,
+.portfolio-modal__primary:focus-visible {
+  background: #1b5d21;
+  outline: none;
+}
+
 @media (max-width: 640px) {
   .portfolio-modal {
     padding: 16px;

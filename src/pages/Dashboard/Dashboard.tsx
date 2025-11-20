@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import TopNav from '../../components/layout/TopNav';
 import StockSection from '../../components/layout/StockSection';
 import type { StockCardProps } from '../../components/layout/StockCard';
@@ -12,15 +12,7 @@ import axios from 'axios';
 import './Dashboard.css';
 
 type Stock = StockCardProps;
-
-const popularStocks: Stock[] = [
-  { symbol: 'AAPL', company: 'Apple Inc.', price: 178.45, change: 2.35, changePercent: 1.33 },
-  { symbol: 'GOOGL', company: 'Alphabet Inc.', price: 142.67, change: -1.24, changePercent: -0.86 },
-  { symbol: 'MSFT', company: 'Microsoft Corp.', price: 412.89, change: 5.67, changePercent: 1.39 },
-  { symbol: 'AMZN', company: 'Amazon.com Inc.', price: 178.25, change: 3.45, changePercent: 1.97 },
-  { symbol: 'TSLA', company: 'Tesla Inc.', price: 248.5, change: -4.2, changePercent: -1.66 },
-  { symbol: 'META', company: 'Meta Platforms Inc.', price: 498.75, change: 8.9, changePercent: 1.82 }
-];
+const HOLDINGS_STORAGE_KEY = 'portfolio_holdings';
 
 const topScoreStocks: Stock[] = [
   { symbol: 'NVDA', company: 'NVIDIA Corp.', price: 842.22, change: 6.42, changePercent: 0.77 },
@@ -38,8 +30,21 @@ const topScoreStocks: Stock[] = [
 const Dashboard: React.FC = () => {
   const [isSearchModalOpen, setSearchModalOpen] = useState(false);
   const [searchResults, setSearchResults] = useState<Stock[]>([]);
+  const [popularStocks, setPopularStocks] = useState<Stock[]>([]);
+  const [popularLoading, setPopularLoading] = useState(false);
+  const [popularError, setPopularError] = useState<string | null>(null);
+  const [holdings, setHoldings] = useState<Holding[]>(() => {
+    try {
+      const saved = localStorage.getItem(HOLDINGS_STORAGE_KEY);
+      if (saved) return JSON.parse(saved) as Holding[];
+    } catch (e) {
+      console.warn('Failed to parse saved holdings', e);
+    }
+    return [];
+  });
   const [selectedHolding, setSelectedHolding] = useState<Holding | null>(null);
   const [isHoldingModalOpen, setHoldingModalOpen] = useState(false);
+  const API_BASE = process.env.REACT_APP_API_URL || 'http://127.0.0.1:5001';
 
   const stockPerformance: Record<string, PerformancePoint[]> = useMemo(
     () => ({
@@ -99,7 +104,7 @@ const Dashboard: React.FC = () => {
     symbol: stock.symbol,
     company: stock.company,
     shares: 10,
-    value: Number((stock.price * 10).toFixed(2)),
+    value: Number(stock.price.toFixed(2)),
     growthPercent: stock.changePercent
   });
 
@@ -108,38 +113,65 @@ const Dashboard: React.FC = () => {
     return stockPerformance[selectedHolding.symbol] || fallbackPerformance(selectedHolding.value);
   }, [selectedHolding, stockPerformance]);
 
+  useEffect(() => {
+    localStorage.setItem(HOLDINGS_STORAGE_KEY, JSON.stringify(holdings));
+  }, [holdings]);
+
+  useEffect(() => {
+    const fetchPopular = async () => {
+      setPopularLoading(true);
+      setPopularError(null);
+      try {
+        const response = await axios.get(`${API_BASE}/popular`, {
+          params: { limit: 6 }
+        });
+        const mapped = (response.data ?? []).map((stock: any) => ({
+          symbol: stock.symbol,
+          company: stock.company,
+          price: stock.price,
+          change: stock.change ?? 0,
+          changePercent: stock.changePercent ?? 0
+        }));
+        setPopularStocks(mapped.slice(0, 6));
+      } catch (error) {
+        console.error('Failed to load popular stocks', error);
+        setPopularError('Could not load popular stocks.');
+        setPopularStocks([]);
+      } finally {
+        setPopularLoading(false);
+      }
+    };
+
+    fetchPopular();
+  }, [API_BASE]);
+
   const handleSearch = async (searchText: string, filters: FilterValues) => {
     // Open the modal immediately
     setSearchModalOpen(true);
 
     try {
-      // Format the country array to a comma-separated string
       const countryString = filters.country.join(',');
 
-      const searchPayload = {
-        text: searchText,
-        filters: {
+      const response = await axios.get(`${API_BASE}/api/stocks/search`, {
+        params: {
+          text: searchText,
           country: countryString,
           min_price: filters.min_price,
           max_price: filters.max_price,
           sector: filters.sector,
           sub_sector: filters.sub_sector
         }
-      };
-
-      console.log('Sending search request:', searchPayload);
-
-      const response = await axios.post('http://127.0.0.1:5001/search', searchPayload);
+      });
 
       console.log('Search results:', response.data);
 
       // Transform the response data to match StockCardProps format
-      const transformedResults: Stock[] = response.data.map((stock: any) => ({
+      const transformedResults: Stock[] = (response.data ?? []).map((stock: any) => ({
         symbol: stock.symbol,
         company: stock.company,
         price: stock.price,
-        change: 0, // Not provided by backend, default to 0
-        changePercent: 0 // Not provided by backend, default to 0
+        change: stock.change ?? 0,
+        changePercent: stock.changePercent ?? 0
       }));
 
       setSearchResults(transformedResults);
@@ -150,10 +182,30 @@ const Dashboard: React.FC = () => {
   };
 
   const handleSelectStock = (stock: Stock) => {
+    setSearchModalOpen(false);
     const holding = holdingFromStock(stock);
     setSelectedHolding(holding);
     setHoldingModalOpen(true);
   };
+
+  const handleAddHolding = (holding: Holding) => {
+    setHoldings((prev) => {
+      const exists = prev.some((h) => h.symbol === holding.symbol);
+      if (exists) {
+        return prev.map((h) => (h.symbol === holding.symbol ? holding : h));
+      }
+      return [...prev, holding];
+    });
+    setHoldingModalOpen(false);
+  };
+
+  const handleRemoveHolding = (holding: Holding) => {
+    setHoldings((prev) => prev.filter((h) => h.symbol !== holding.symbol));
+    setHoldingModalOpen(false);
+    setSelectedHolding(null);
+  };
+
+  const isInHoldings = selectedHolding ? holdings.some((h) => h.symbol === selectedHolding.symbol) : false;
 
   return (
     <div className="dashboard">
@@ -167,7 +219,11 @@ const Dashboard: React.FC = () => {
           <SearchBar onSubmit={handleSearch} />
         </section>
 
-        <StockSection title="Popular Stocks" stocks={popularStocks} onSelectStock={handleSelectStock} />
+        <section className="dashboard__section--with-meta">
+          <StockSection title="Popular Stocks" stocks={popularStocks} onSelectStock={handleSelectStock} />
+          {popularLoading && <p className="dashboard__meta">Loading popular stocks...</p>}
+          {popularError && <p className="dashboard__meta dashboard__meta--error">{popularError}</p>}
+        </section>
 
         <StockSection title="Top 10 Stocks by Score" stocks={topScoreStocks} onSelectStock={handleSelectStock} />
 
@@ -186,6 +242,9 @@ const Dashboard: React.FC = () => {
         data={modalChartData}
         isOpen={isHoldingModalOpen}
         onClose={() => setHoldingModalOpen(false)}
+        onAdd={handleAddHolding}
+        onRemove={handleRemoveHolding}
+        isInHoldings={isInHoldings}
       />
     </div>
   );

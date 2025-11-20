@@ -129,6 +129,22 @@
   color: #d64545;
 }
 
+.portfolio__action-btn {
+  border: none;
+  background: #206f27;
+  color: #ffffff;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.portfolio__action-btn:hover,
+.portfolio__action-btn:focus-visible {
+  background: #1b5d21;
+  outline: none;
+}
+
 .portfolio__modal {
   display: grid;
   grid-template-columns: minmax(240px, 0.7fr) minmax(320px, 1.3fr);

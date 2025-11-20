@@ -16,7 +16,7 @@ type HoldingsSectionProps = {
 const HoldingsSection: React.FC<HoldingsSectionProps> = ({ holdings, onSelect }) => (
   <section className="portfolio__list-section">
     <header className="portfolio__list-header">
-      <h2>Holdings</h2>
+      <h2 style={{ margin: 0 }}>Holdings</h2>
       <span className="portfolio__label portfolio__label--muted">Amount held & growth by stock</span>
     </header>
 

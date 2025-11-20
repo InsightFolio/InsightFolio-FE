@@ -5,7 +5,9 @@ import HoldingsSection, { Holding } from '../../components/portfolio/HoldingsSec
 import HoldingDetailModal from '../../components/portfolio/HoldingDetailModal';
 import './Portfolio.css';
 
-const holdings: Holding[] = [
+const HOLDINGS_STORAGE_KEY = 'portfolio_holdings';
+
+const initialHoldings: Holding[] = [
   { symbol: 'AAPL', company: 'Apple Inc.', shares: 50, value: 8970, growthPercent: 12.4 },
   { symbol: 'MSFT', company: 'Microsoft Corp.', shares: 35, value: 14450, growthPercent: 9.1 },
   { symbol: 'NVDA', company: 'NVIDIA Corp.', shares: 20, value: 16840, growthPercent: 18.6 },
@@ -70,13 +72,31 @@ const holdingPerformance: Record<string, PerformancePoint[]> = {
   ]
 };
 
-const portfolioValue = holdings.reduce((sum, holding) => sum + holding.value, 0);
-const portfolioGrowth = 8.7;
-const totalShares = holdings.reduce((sum, h) => sum + h.shares, 0);
-
 const Portfolio: React.FC = () => {
+  const [holdings, setHoldings] = useState<Holding[]>(() => {
+    try {
+      const saved = localStorage.getItem(HOLDINGS_STORAGE_KEY);
+      if (saved) {
+        return JSON.parse(saved) as Holding[];
+      }
+    } catch (e) {
+      console.warn('Failed to parse saved holdings', e);
+    }
+    return initialHoldings;
+  });
   const [selectedHolding, setSelectedHolding] = useState<Holding | null>(null);
   const [isModalOpen, setModalOpen] = useState(false);
+
+  React.useEffect(() => {
+    localStorage.setItem(HOLDINGS_STORAGE_KEY, JSON.stringify(holdings));
+  }, [holdings]);
+
+  const portfolioValue = useMemo(
+    () => holdings.reduce((sum, holding) => sum + holding.value, 0),
+    [holdings]
+  );
+  const totalShares = useMemo(() => holdings.reduce((sum, h) => sum + h.shares, 0), [holdings]);
+  const portfolioGrowth = 8.7;
 
   const modalChartData = useMemo<PerformancePoint[]>(() => {
     if (!selectedHolding) return [];
@@ -86,6 +106,23 @@ const Portfolio: React.FC = () => {
   const handleSelectHolding = (holding: Holding) => {
     setSelectedHolding(holding);
     setModalOpen(true);
+  };
+
+  const handleRemoveHolding = (holding: Holding) => {
+    setHoldings((prev) => prev.filter((h) => h.symbol !== holding.symbol));
+    setModalOpen(false);
+    setSelectedHolding(null);
+  };
+
+  const handleConfirmAdd = (holding: Holding) => {
+    setHoldings((prev) => {
+      const exists = prev.some((h) => h.symbol === holding.symbol);
+      if (exists) {
+        return prev.map((h) => (h.symbol === holding.symbol ? holding : h));
+      }
+      return [...prev, holding];
+    });
+    setModalOpen(false);
   };
 
   return (
@@ -108,6 +145,9 @@ const Portfolio: React.FC = () => {
         data={modalChartData}
         isOpen={isModalOpen}
         onClose={() => setModalOpen(false)}
+        onRemove={handleRemoveHolding}
+        onAdd={handleConfirmAdd}
+        isInHoldings={!!selectedHolding && holdings.some((h) => h.symbol === selectedHolding.symbol)}
       />
     </div>
   );
