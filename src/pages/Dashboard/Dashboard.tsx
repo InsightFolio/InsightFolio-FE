@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import TopNav from '../../components/layout/TopNav';
 import StockSection from '../../components/layout/StockSection';
 import type { StockCardProps } from '../../components/layout/StockCard';
 import SearchBar from '../../components/dashboard/SearchBar';
 import ModalContainer from '../../components/ui/ModalContainer';
 import type { FilterValues } from '../../components/form/FilterButton';
+import HoldingDetailModal from '../../components/portfolio/HoldingDetailModal';
+import type { Holding } from '../../components/portfolio/HoldingsSection';
+import type { PerformancePoint } from '../../components/portfolio/BalanceSection';
 import axios from 'axios';
 import './Dashboard.css';
 
@@ -35,6 +38,75 @@ const topScoreStocks: Stock[] = [
 const Dashboard: React.FC = () => {
   const [isSearchModalOpen, setSearchModalOpen] = useState(false);
   const [searchResults, setSearchResults] = useState<Stock[]>([]);
+  const [selectedHolding, setSelectedHolding] = useState<Holding | null>(null);
+  const [isHoldingModalOpen, setHoldingModalOpen] = useState(false);
+
+  const stockPerformance: Record<string, PerformancePoint[]> = useMemo(
+    () => ({
+      AAPL: [
+        { label: 'Jan', value: 7800 },
+        { label: 'Feb', value: 8120 },
+        { label: 'Mar', value: 7950 },
+        { label: 'Apr', value: 8280 },
+        { label: 'May', value: 8475 },
+        { label: 'Jun', value: 8620 },
+        { label: 'Jul', value: 8790 },
+        { label: 'Aug', value: 8970 }
+      ],
+      MSFT: [
+        { label: 'Jan', value: 12800 },
+        { label: 'Feb', value: 13250 },
+        { label: 'Mar', value: 13100 },
+        { label: 'Apr', value: 13680 },
+        { label: 'May', value: 13820 },
+        { label: 'Jun', value: 14040 },
+        { label: 'Jul', value: 14300 },
+        { label: 'Aug', value: 14450 }
+      ],
+      NVDA: [
+        { label: 'Jan', value: 14200 },
+        { label: 'Feb', value: 14950 },
+        { label: 'Mar', value: 15120 },
+        { label: 'Apr', value: 15480 },
+        { label: 'May', value: 15810 },
+        { label: 'Jun', value: 16150 },
+        { label: 'Jul', value: 16580 },
+        { label: 'Aug', value: 16840 }
+      ],
+      AMZN: [
+        { label: 'Jan', value: 7120 },
+        { label: 'Feb', value: 7280 },
+        { label: 'Mar', value: 7220 },
+        { label: 'Apr', value: 7440 },
+        { label: 'May', value: 7560 },
+        { label: 'Jun', value: 7690 },
+        { label: 'Jul', value: 7780 },
+        { label: 'Aug', value: 7850 }
+      ]
+    }),
+    []
+  );
+
+  const fallbackPerformance = (value: number): PerformancePoint[] => {
+    const base = value * 0.9;
+    return ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'].map((label, idx) => ({
+      label,
+      value: Math.round(base + (value - base) * (idx / 5))
+    }));
+  };
+
+  const holdingFromStock = (stock: Stock): Holding => ({
+    symbol: stock.symbol,
+    company: stock.company,
+    shares: 10,
+    value: Number((stock.price * 10).toFixed(2)),
+    growthPercent: stock.changePercent
+  });
+
+  const modalChartData = useMemo<PerformancePoint[]>(() => {
+    if (!selectedHolding) return [];
+    return stockPerformance[selectedHolding.symbol] || fallbackPerformance(selectedHolding.value);
+  }, [selectedHolding, stockPerformance]);
 
   const handleSearch = async (searchText: string, filters: FilterValues) => {
     // Open the modal immediately
@@ -77,6 +149,12 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const handleSelectStock = (stock: Stock) => {
+    const holding = holdingFromStock(stock);
+    setSelectedHolding(holding);
+    setHoldingModalOpen(true);
+  };
+
   return (
     <div className="dashboard">
       <TopNav />
@@ -89,18 +167,26 @@ const Dashboard: React.FC = () => {
           <SearchBar onSubmit={handleSearch} />
         </section>
 
-        <StockSection title="Popular Stocks" stocks={popularStocks} />
+        <StockSection title="Popular Stocks" stocks={popularStocks} onSelectStock={handleSelectStock} />
 
-        <StockSection title="Top 10 Stocks by Score" stocks={topScoreStocks} />
+        <StockSection title="Top 10 Stocks by Score" stocks={topScoreStocks} onSelectStock={handleSelectStock} />
 
         <ModalContainer
           title="Search Results"
           isOpen={isSearchModalOpen}
           onClose={() => setSearchModalOpen(false)}
           stocks={searchResults}
+          onSelectStock={handleSelectStock}
         >
         </ModalContainer>
       </main>
+
+      <HoldingDetailModal
+        holding={selectedHolding}
+        data={modalChartData}
+        isOpen={isHoldingModalOpen}
+        onClose={() => setHoldingModalOpen(false)}
+      />
     </div>
   );
 };

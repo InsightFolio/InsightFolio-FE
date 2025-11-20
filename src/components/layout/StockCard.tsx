@@ -8,6 +8,7 @@ export type StockCardProps = {
   price: number;
   change: number;
   changePercent: number;
+  onSelect?: () => void;
 };
 
 const StockCard: React.FC<StockCardProps> = ({
@@ -15,7 +16,8 @@ const StockCard: React.FC<StockCardProps> = ({
   company,
   price,
   change,
-  changePercent
+  changePercent,
+  onSelect
 }) => {
   const isPositive = change >= 0;
   const changeSign = isPositive ? '+' : '';
@@ -26,7 +28,19 @@ const StockCard: React.FC<StockCardProps> = ({
   );
 
   return (
-    <article className={`stock-card ${isPositive ? 'stock-card--up' : 'stock-card--down'}`}>
+    <article
+      className={`stock-card ${isPositive ? 'stock-card--up' : 'stock-card--down'}`}
+      onClick={onSelect}
+      role={onSelect ? 'button' : undefined}
+      tabIndex={onSelect ? 0 : undefined}
+      onKeyDown={(e) => {
+        if (!onSelect) return;
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
+    >
       <header className="stock-card__header">
         <div>
           <h3 className="stock-card__symbol">{symbol}</h3>
