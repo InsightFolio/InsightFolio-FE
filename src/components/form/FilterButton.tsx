@@ -64,7 +64,18 @@ const FilterButton = ({ type = 'button', onFiltersChange, ...buttonProps }: Filt
   const handlePriceChange = (field: 'min_price' | 'max_price', value: string) => {
     setFilterValues(prev => {
       const numValue = value === '' ? 0 : Number(value);
-      const newFilterValues = { ...prev, [field]: numValue };
+      let newFilterValues = { ...prev, [field]: numValue };
+      
+      // Validate: min should not be greater than max
+      if (field === 'min_price' && newFilterValues.max_price > 0 && numValue > newFilterValues.max_price) {
+        newFilterValues.min_price = newFilterValues.max_price;
+      }
+      
+      // Validate: max should not be less than min
+      if (field === 'max_price' && numValue > 0 && numValue < newFilterValues.min_price) {
+        newFilterValues.max_price = newFilterValues.min_price;
+      }
+      
       onFiltersChange?.(newFilterValues);
       return newFilterValues;
     });
