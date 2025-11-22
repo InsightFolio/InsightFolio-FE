@@ -6,6 +6,8 @@ export type StockCardProps = {
   symbol: string;
   company: string;
   price: number;
+  sector: string;
+  sub_sector: string;
   change: number;
   changePercent: number;
   onSelect?: () => void;
@@ -15,6 +17,8 @@ const StockCard: React.FC<StockCardProps> = ({
   symbol,
   company,
   price,
+  sector,
+  sub_sector,
   change,
   changePercent,
   onSelect

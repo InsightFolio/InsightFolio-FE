@@ -12,8 +12,8 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSubmit }) => {
     country: [],
     min_price: 0,
     max_price: 0,
-    sector: "",
-    sub_sector: ""
+    sector: [],
+    sub_sector: []
   });
 
   const handleSubmit = () => {

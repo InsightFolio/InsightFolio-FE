@@ -61,6 +61,11 @@
   flex-shrink: 0;
 }
 
+.filter-checkbox:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
 .filter-label {
   font-weight: 600;
   font-size: 1rem;
@@ -76,6 +81,15 @@
 
 .filter-label:hover {
   background-color: rgba(33, 34, 39, 0.1);
+}
+
+.filter-option:has(.filter-checkbox:disabled) .filter-label {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.filter-option:has(.filter-checkbox:disabled) .filter-label:hover {
+  background-color: transparent;
 }
 
 /* Active state when checkbox is checked */

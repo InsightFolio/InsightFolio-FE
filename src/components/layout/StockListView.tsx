@@ -12,6 +12,8 @@ const StockListView: React.FC<StockListViewProps> = ({ stocks, onSelectStock }) 
       <span role="columnheader">Symbol</span>
       <span role="columnheader">Company</span>
       <span role="columnheader">Price</span>
+      <span role="columnheader">Sector</span>
+      <span role="columnheader">Sub-Sector</span>
     </div>
     {stocks.map((stock) => {
       return (
@@ -30,6 +32,12 @@ const StockListView: React.FC<StockListViewProps> = ({ stocks, onSelectStock }) 
           </span>
           <span role="cell" className="stock-list__cell stock-list__cell--price">
             ${stock.price.toFixed(2)}
+          </span>
+          <span role="cell" className="stock-list__cell stock-list__cell--sector">
+            {stock.sector}
+          </span>
+          <span role="cell" className="stock-list__cell stock-list__cell--sub-sector">
+            {stock.sub_sector}
           </span>
         </button>
       );
