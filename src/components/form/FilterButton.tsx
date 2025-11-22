@@ -17,11 +17,13 @@ export type FilterValues = {
   country: string[];
   min_price: number;
   max_price: number;
-  sector: string;
-  sub_sector: string;
+  sector: string[];
+  sub_sector: string[];
 };
 
 const COUNTRIES = ["United States", "Canada", "France", "Netherlands"];
+const SECTORS = ["Technology", "Healthcare", "Finance", "Energy"];
+const SUB_SECTORS = ["Software", "Biotech", "Banking", "Oil & Gas"];
 
 const FilterButton = ({ type = 'button', onFiltersChange, ...buttonProps }: FilterButtonProps) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -36,17 +38,28 @@ const FilterButton = ({ type = 'button', onFiltersChange, ...buttonProps }: Filt
     country: [],
     min_price: 0,
     max_price: 0,
-    sector: "",
-    sub_sector: ""
+    sector: [],
+    sub_sector: []
   });
 
   const [isCountryDropdownOpen, setIsCountryDropdownOpen] = useState(false);
+  const [isSectorDropdownOpen, setIsSectorDropdownOpen] = useState(false);
+  const [isSubSectorDropdownOpen, setIsSubSectorDropdownOpen] = useState(false);
 
   const handleCheckboxChange = (filterName: keyof Filters) => {
-    setFilters(prev => ({
-      ...prev,
-      [filterName]: !prev[filterName]
-    }));
+    setFilters(prev => {
+      const newFilters = {
+        ...prev,
+        [filterName]: !prev[filterName]
+      };
+      
+      // If unchecking sector, also uncheck subSector
+      if (filterName === 'sector' && prev.sector === true) {
+        newFilters.subSector = false;
+      }
+      
+      return newFilters;
+    });
   };
 
   const handleCountryToggle = (country: string) => {
@@ -60,6 +73,29 @@ const FilterButton = ({ type = 'button', onFiltersChange, ...buttonProps }: Filt
       return newFilterValues;
     });
   };
+
+  const handleSectorToggle = (sector: string) => {
+    setFilterValues(prev => {
+      const newSectors = prev.sector.includes(sector)
+        ? prev.sector.filter(s => s !== sector)
+        : [...prev.sector, sector];
+      
+      const newFilterValues = { ...prev, sector: newSectors };
+      onFiltersChange?.(newFilterValues);
+      return newFilterValues;
+    });
+  };
+
+  const handleSubSectorToggle = (subSector: string) => {
+    setFilterValues(prev => {
+      const newSubSectors = prev.sub_sector.includes(subSector)
+        ? prev.sub_sector.filter(s => s !== subSector)
+        : [...prev.sub_sector, subSector];  
+      const newFilterValues = { ...prev, sub_sector: newSubSectors };
+      onFiltersChange?.(newFilterValues);
+      return newFilterValues;
+    });
+  }
 
   const handlePriceChange = (field: 'min_price' | 'max_price', value: string) => {
     setFilterValues(prev => {
@@ -185,15 +221,83 @@ const FilterButton = ({ type = 'button', onFiltersChange, ...buttonProps }: Filt
             />
             <span className="filter-label">Sector</span>
           </label>
+
+          {filters.sector && (
+              <div className="filter-expansion">
+                <button
+                  type="button"
+                  className="filter-country-dropdown-btn"
+                  onClick={() => setIsSectorDropdownOpen(!isSectorDropdownOpen)}
+                >
+                  <span>
+                    {filterValues.sector.length === 0 
+                      ? 'Select sectors' 
+                      : `${filterValues.sector.length} selected`}
+                  </span>
+                  <ChevronDown size={16} />
+                </button>
+                
+                {isSectorDropdownOpen && (
+                  <div className="filter-country-list">
+                    {SECTORS.map(sector => (
+                      <label key={sector} className="filter-country-option">
+                        <input
+                          type="checkbox"
+                          checked={filterValues.sector.includes(sector)}
+                          onChange={() => handleSectorToggle(sector)}
+                          className="filter-country-checkbox"
+                        />
+                        <span>{sector}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+            
+          )}
           <label className="filter-option">
             <input
               type="checkbox"
               checked={filters.subSector}
               onChange={() => handleCheckboxChange('subSector')}
               className="filter-checkbox"
+              disabled={!filters.sector}
             />
             <span className="filter-label">Sub-Sector</span>
           </label>
+
+          {filters.subSector && (
+            <div className="filter-expansion">
+              <button
+                  type="button"
+                  className="filter-country-dropdown-btn"
+                  onClick={() => setIsSubSectorDropdownOpen(!isSubSectorDropdownOpen)}
+                >
+                  <span>
+                    {filterValues.sub_sector.length === 0 
+                      ? 'Select sub-sectors' 
+                      : `${filterValues.sub_sector.length} selected`}
+                  </span>
+                  <ChevronDown size={16} />
+                </button>
+
+                {isSubSectorDropdownOpen && (
+                  <div className="filter-country-list">
+                    {SUB_SECTORS.map(subSector => (
+                      <label key={subSector} className="filter-country-option">
+                        <input
+                          type="checkbox"
+                          checked={filterValues.sub_sector.includes(subSector)}
+                          onChange={() => handleSubSectorToggle(subSector)}
+                          className="filter-country-checkbox"
+                        />
+                        <span>{subSector}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+            </div>
+          )}
         </div>
       )}
     </div>

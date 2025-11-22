@@ -15,16 +15,16 @@ type Stock = StockCardProps;
 const HOLDINGS_STORAGE_KEY = 'portfolio_holdings';
 
 const topScoreStocks: Stock[] = [
-  { symbol: 'NVDA', company: 'NVIDIA Corp.', price: 842.22, change: 6.42, changePercent: 0.77 },
-  { symbol: 'AMD', company: 'Advanced Micro Devices', price: 158.12, change: -1.12, changePercent: -0.71 },
-  { symbol: 'NFLX', company: 'Netflix Inc.', price: 612.45, change: 5.31, changePercent: 0.87 },
-  { symbol: 'PYPL', company: 'PayPal Holdings', price: 72.58, change: -0.65, changePercent: -0.89 },
-  { symbol: 'ADBE', company: 'Adobe Inc.', price: 528.44, change: 3.24, changePercent: 0.62 },
-  { symbol: 'CRM', company: 'Salesforce Inc.', price: 286.13, change: 1.12, changePercent: 0.39 },
-  { symbol: 'AVGO', company: 'Broadcom Inc.', price: 1362.32, change: 12.45, changePercent: 0.92 },
-  { symbol: 'COST', company: 'Costco Wholesale', price: 723.75, change: 4.11, changePercent: 0.57 },
-  { symbol: 'MA', company: 'Mastercard Inc.', price: 485.2, change: -2.34, changePercent: -0.48 },
-  { symbol: 'UNH', company: 'UnitedHealth Group', price: 533.17, change: 3.76, changePercent: 0.71 }
+  { symbol: 'NVDA', company: 'NVIDIA Corp.', price: 842.22, sector: 'Technology', sub_sector: 'Semiconductors', change: 6.42, changePercent: 0.77 },
+  { symbol: 'AMD', company: 'Advanced Micro Devices', price: 158.12, sector: 'Technology', sub_sector: 'Semiconductors', change: -1.12, changePercent: -0.71 },
+  { symbol: 'NFLX', company: 'Netflix Inc.', price: 612.45, sector: 'Communication Services', sub_sector: 'Entertainment', change: 5.31, changePercent: 0.87 },
+  { symbol: 'PYPL', company: 'PayPal Holdings', price: 72.58, sector: 'Financial Services', sub_sector: 'Credit Services', change: -0.65, changePercent: -0.89 },
+  { symbol: 'ADBE', company: 'Adobe Inc.', price: 528.44, sector: 'Technology', sub_sector: 'Software - Application', change: 3.24, changePercent: 0.62 },
+  { symbol: 'CRM', company: 'Salesforce Inc.', price: 286.13, sector: 'Technology', sub_sector: 'Software - Application', change: 1.12, changePercent: 0.39 },
+  { symbol: 'AVGO', company: 'Broadcom Inc.', price: 1362.32, sector: 'Technology', sub_sector: 'Semiconductors', change: 12.45, changePercent: 0.92 },
+  { symbol: 'COST', company: 'Costco Wholesale', price: 723.75, sector: 'Consumer Defensive', sub_sector: 'Discount Stores', change: 4.11, changePercent: 0.57 },
+  { symbol: 'MA', company: 'Mastercard Inc.', price: 485.2, sector: 'Financial Services', sub_sector: 'Credit Services', change: -2.34, changePercent: -0.48 },
+  { symbol: 'UNH', company: 'UnitedHealth Group', price: 533.17, sector: 'Healthcare', sub_sector: 'Healthcare Plans', change: 3.76, changePercent: 0.71 }
 ];
 
 const Dashboard: React.FC = () => {
@@ -150,16 +150,14 @@ const Dashboard: React.FC = () => {
     setSearchModalOpen(true);
 
     try {
-      const countryString = filters.country.join(',');
-
-      const response = await axios.get(`${API_BASE}/api/stocks/search`, {
-        params: {
-          text: searchText,
-          country: countryString,
+      const response = await axios.post(`${API_BASE}/search`, {
+        text: searchText,
+        filters: {
+          country: filters.country.join(','),
           min_price: filters.min_price,
           max_price: filters.max_price,
-          sector: filters.sector,
-          sub_sector: filters.sub_sector
+          sector: filters.sector.join(','),
+          sub_sector: filters.sub_sector.join(',')
         }
       });
 
@@ -170,6 +168,8 @@ const Dashboard: React.FC = () => {
         symbol: stock.symbol,
         company: stock.company,
         price: stock.price,
+        sector: stock.sector,
+        sub_sector: stock.sub_sector,
         change: stock.change ?? 0,
         changePercent: stock.changePercent ?? 0
       }));
