@@ -9,6 +9,7 @@ type ModalContainerProps = {
   children?: React.ReactNode;
   onClose?: () => void;
   stocks?: StockCardProps[];
+  onSelectStock?: (stock: StockCardProps) => void;
 };
 
 const ModalContainer: React.FC<ModalContainerProps> = ({
@@ -16,7 +17,8 @@ const ModalContainer: React.FC<ModalContainerProps> = ({
   isOpen,
   children,
   onClose,
-  stocks = []
+  stocks = [],
+  onSelectStock
 }) => {
   if (!isOpen) {
     return null;
@@ -36,7 +38,7 @@ const ModalContainer: React.FC<ModalContainerProps> = ({
         <h2 className="modal__title">{title}</h2>
         {children}
         {stocks.length > 0 ? (
-          <StockListView stocks={stocks} />
+          <StockListView stocks={stocks} onSelectStock={onSelectStock} />
         ) : (
           <p style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>
             No results found. Try a different search.

@@ -7,6 +7,7 @@ import StockListView from './StockListView';
 type StockSectionProps = {
   title: string;
   stocks: StockCardProps[];
+  onSelectStock?: (stock: StockCardProps) => void;
 };
 
 type ViewMode = 'grid' | 'list';
@@ -20,7 +21,7 @@ const viewOptions: Array<{
   { Icon: List, label: 'List view', value: 'list' }
 ];
 
-const StockSection: React.FC<StockSectionProps> = ({ title, stocks }) => {
+const StockSection: React.FC<StockSectionProps> = ({ title, stocks, onSelectStock }) => {
   const [view, setView] = useState<ViewMode>('grid');
 
   return (
@@ -49,7 +50,11 @@ const StockSection: React.FC<StockSectionProps> = ({ title, stocks }) => {
         </span>
       </header>
 
-      {view === 'grid' ? <StockGridView stocks={stocks} /> : <StockListView stocks={stocks} />}
+      {view === 'grid' ? (
+        <StockGridView stocks={stocks} onSelectStock={onSelectStock} />
+      ) : (
+        <StockListView stocks={stocks} onSelectStock={onSelectStock} />
+      )}
     </section>
   );
 };

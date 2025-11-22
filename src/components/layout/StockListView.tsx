@@ -3,9 +3,10 @@ import { StockCardProps } from './StockCard';
 
 type StockListViewProps = {
   stocks: StockCardProps[];
+  onSelectStock?: (stock: StockCardProps) => void;
 };
 
-const StockListView: React.FC<StockListViewProps> = ({ stocks }) => (
+const StockListView: React.FC<StockListViewProps> = ({ stocks, onSelectStock }) => (
   <div className="stock-list" role="table">
     <div className="stock-list__row stock-list__row--header" role="row">
       <span role="columnheader">Symbol</span>
@@ -19,6 +20,7 @@ const StockListView: React.FC<StockListViewProps> = ({ stocks }) => (
           type="button"
           className="stock-list__row"
           role="row"
+          onClick={() => onSelectStock?.(stock)}
         >
           <span role="cell" className="stock-list__cell stock-list__cell--symbol">
             {stock.symbol}

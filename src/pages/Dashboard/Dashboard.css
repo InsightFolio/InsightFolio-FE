@@ -202,6 +202,16 @@
   justify-self: start;
 }
 
+.dashboard__section--with-meta .dashboard__meta {
+  margin-top: 8px;
+  color: rgba(33, 34, 39, 0.7);
+  font-weight: 600;
+}
+
+.dashboard__section--with-meta .dashboard__meta--error {
+  color: #d64545;
+}
+
 @media (max-width: 768px) {
   .dashboard {
     padding-bottom: 48px;
