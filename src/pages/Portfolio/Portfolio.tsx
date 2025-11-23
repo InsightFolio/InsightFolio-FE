@@ -1,18 +1,13 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import TopNav from '../../components/layout/TopNav';
 import BalanceSection, { PerformancePoint } from '../../components/portfolio/BalanceSection';
 import HoldingsSection, { Holding } from '../../components/portfolio/HoldingsSection';
 import HoldingDetailModal from '../../components/portfolio/HoldingDetailModal';
+import { getUserHoldings, processTransaction, getUserAccount } from '../../services/transactionService';
 import './Portfolio.css';
 
-const HOLDINGS_STORAGE_KEY = 'portfolio_holdings';
-
-const initialHoldings: Holding[] = [
-  { symbol: 'AAPL', company: 'Apple Inc.', shares: 50, value: 8970, growthPercent: 12.4 },
-  { symbol: 'MSFT', company: 'Microsoft Corp.', shares: 35, value: 14450, growthPercent: 9.1 },
-  { symbol: 'NVDA', company: 'NVIDIA Corp.', shares: 20, value: 16840, growthPercent: 18.6 },
-  { symbol: 'AMZN', company: 'Amazon.com Inc.', shares: 22, value: 7850, growthPercent: 6.3 }
-];
+// TODO: Replace with actual user ID from authentication context
+const CURRENT_USER_ID = 1;
 
 const portfolioPerformance: PerformancePoint[] = [
   { label: 'Jan', value: 51000 },
@@ -73,23 +68,69 @@ const holdingPerformance: Record<string, PerformancePoint[]> = {
 };
 
 const Portfolio: React.FC = () => {
-  const [holdings, setHoldings] = useState<Holding[]>(() => {
-    try {
-      const saved = localStorage.getItem(HOLDINGS_STORAGE_KEY);
-      if (saved) {
-        return JSON.parse(saved) as Holding[];
-      }
-    } catch (e) {
-      console.warn('Failed to parse saved holdings', e);
-    }
-    return initialHoldings;
-  });
+  const [holdings, setHoldings] = useState<Holding[]>([]);
   const [selectedHolding, setSelectedHolding] = useState<Holding | null>(null);
   const [isModalOpen, setModalOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [accountBalance, setAccountBalance] = useState(0);
 
-  React.useEffect(() => {
-    localStorage.setItem(HOLDINGS_STORAGE_KEY, JSON.stringify(holdings));
-  }, [holdings]);
+  // Fetch holdings from backend
+  useEffect(() => {
+    const fetchHoldings = async () => {
+      setLoading(true);
+      try {
+        const holdingsData = await getUserHoldings(CURRENT_USER_ID);
+        
+        // Transform backend holdings to match frontend Holding type
+        const transformedHoldings: Holding[] = holdingsData.map((h: any) => ({
+          symbol: h.symbol || '',
+          company: h.company || h.symbol || '',
+          shares: h.quantity || 0,
+          value: (h.price || 0) * (h.quantity || 0),
+          growthPercent: 0, // TODO: Calculate from historical data
+          stock_id: h.stock_id // Store stock_id for transactions
+        }));
+        
+        setHoldings(transformedHoldings);
+      } catch (error) {
+        console.error('Failed to load holdings:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const fetchAccount = async () => {
+      try {
+        const account = await getUserAccount(CURRENT_USER_ID);
+        setAccountBalance(account.balance);
+      } catch (error) {
+        console.error('Failed to load account:', error);
+      }
+    };
+
+    fetchHoldings();
+    fetchAccount();
+  }, []);
+
+  const refreshHoldings = async () => {
+    try {
+      const holdingsData = await getUserHoldings(CURRENT_USER_ID);
+      const transformedHoldings: Holding[] = holdingsData.map((h: any) => ({
+        symbol: h.symbol || '',
+        company: h.company || h.symbol || '',
+        shares: h.quantity || 0,
+        value: (h.price || 0) * (h.quantity || 0),
+        growthPercent: 0,
+        stock_id: h.stock_id
+      }));
+      setHoldings(transformedHoldings);
+
+      const account = await getUserAccount(CURRENT_USER_ID);
+      setAccountBalance(account.balance);
+    } catch (error) {
+      console.error('Failed to refresh holdings:', error);
+    }
+  };
 
   const portfolioValue = useMemo(
     () => holdings.reduce((sum, holding) => sum + holding.value, 0),
@@ -108,36 +149,45 @@ const Portfolio: React.FC = () => {
     setModalOpen(true);
   };
 
-  const handleRemoveHolding = (holding: Holding) => {
-    setHoldings((prev) => prev.filter((h) => h.symbol !== holding.symbol));
-    setModalOpen(false);
-    setSelectedHolding(null);
+  const handleBuyStock = async (stockId: number, quantity: number) => {
+    try {
+      await processTransaction(CURRENT_USER_ID, stockId, 'buy', quantity);
+      await refreshHoldings();
+    } catch (error: any) {
+      throw error;
+    }
   };
 
-  const handleConfirmAdd = (holding: Holding) => {
-    setHoldings((prev) => {
-      const exists = prev.some((h) => h.symbol === holding.symbol);
-      if (exists) {
-        return prev.map((h) => (h.symbol === holding.symbol ? holding : h));
-      }
-      return [...prev, holding];
-    });
-    setModalOpen(false);
+  const handleSellStock = async (stockId: number, quantity: number) => {
+    try {
+      await processTransaction(CURRENT_USER_ID, stockId, 'sell', quantity);
+      await refreshHoldings();
+    } catch (error: any) {
+      throw error;
+    }
   };
 
   return (
     <div className="portfolio">
       <TopNav />
       <main className="portfolio__content">
-        <BalanceSection
-          totalValue={portfolioValue}
-          growthPercent={portfolioGrowth}
-          holdingsCount={holdings.length}
-          totalShares={totalShares}
-          performance={portfolioPerformance}
-        />
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '3rem', color: '#206f27' }}>
+            <p>Loading portfolio...</p>
+          </div>
+        ) : (
+          <>
+            <BalanceSection
+              totalValue={portfolioValue}
+              growthPercent={portfolioGrowth}
+              holdingsCount={holdings.length}
+              totalShares={totalShares}
+              performance={portfolioPerformance}
+            />
 
-        <HoldingsSection holdings={holdings} onSelect={handleSelectHolding} />
+            <HoldingsSection holdings={holdings} onSelect={handleSelectHolding} />
+          </>
+        )}
       </main>
 
       <HoldingDetailModal
@@ -145,9 +195,11 @@ const Portfolio: React.FC = () => {
         data={modalChartData}
         isOpen={isModalOpen}
         onClose={() => setModalOpen(false)}
-        onRemove={handleRemoveHolding}
-        onAdd={handleConfirmAdd}
-        isInHoldings={!!selectedHolding && holdings.some((h) => h.symbol === selectedHolding.symbol)}
+        onBuy={handleBuyStock}
+        onSell={handleSellStock}
+        isInHoldings={true}
+        currentPrice={selectedHolding ? selectedHolding.value / (selectedHolding.shares || 1) : 0}
+        stockId={selectedHolding?.stock_id}
       />
     </div>
   );

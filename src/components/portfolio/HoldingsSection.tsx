@@ -6,6 +6,7 @@ export type Holding = {
   shares: number;
   value: number;
   growthPercent: number;
+  stock_id?: number;
 };
 
 type HoldingsSectionProps = {

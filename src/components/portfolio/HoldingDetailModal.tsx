@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Area,
   AreaChart,
@@ -17,9 +17,11 @@ type HoldingDetailModalProps = {
   data: PerformancePoint[];
   isOpen: boolean;
   onClose: () => void;
-  onAdd?: (holding: Holding) => void;
-  onRemove?: (holding: Holding) => void;
+  onBuy?: (stockId: number, quantity: number) => Promise<void>;
+  onSell?: (stockId: number, quantity: number) => Promise<void>;
   isInHoldings?: boolean;
+  currentPrice?: number;
+  stockId?: number;
 };
 
 const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({
@@ -27,13 +29,61 @@ const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({
   data,
   isOpen,
   onClose,
-  onAdd,
-  onRemove,
-  isInHoldings = false
+  onBuy,
+  onSell,
+  isInHoldings = false,
+  currentPrice,
+  stockId
 }) => {
+  const [quantity, setQuantity] = useState<number>(1);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   if (!isOpen || !holding) {
     return null;
   }
+
+  const price = currentPrice || holding.value / (holding.shares || 1);
+  const totalCost = price * quantity;
+
+  const handleBuy = async () => {
+    if (!onBuy || quantity <= 0 || !stockId) return;
+    
+    setIsProcessing(true);
+    setError(null);
+    
+    try {
+      await onBuy(stockId, quantity);
+      setQuantity(1);
+      onClose();
+    } catch (err: any) {
+      setError(err.message || 'Failed to buy stock');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleSell = async () => {
+    if (!onSell || quantity <= 0 || !stockId) return;
+    
+    if (quantity > holding.shares) {
+      setError(`Cannot sell more than ${holding.shares} shares`);
+      return;
+    }
+    
+    setIsProcessing(true);
+    setError(null);
+    
+    try {
+      await onSell(stockId, quantity);
+      setQuantity(1);
+      onClose();
+    } catch (err: any) {
+      setError(err.message || 'Failed to sell stock');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   return (
     <div className="portfolio-modal-overlay" role="dialog" aria-modal="true" aria-label="Holding details">
@@ -49,18 +99,51 @@ const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({
           </button>
         </header>
 
-        {(onAdd || onRemove) && (
-          <div className="portfolio-modal__actions">
-            {isInHoldings && onRemove && (
-              <button type="button" className="portfolio-modal__danger" onClick={() => onRemove(holding)}>
-                Remove / Close position
-              </button>
-            )}
-            {!isInHoldings && onAdd && (
-              <button type="button" className="portfolio-modal__primary" onClick={() => onAdd(holding)}>
-                Add holding
-              </button>
-            )}
+        {error && (
+          <div className="portfolio-modal__error">
+            {error}
+          </div>
+        )}
+
+        {(onBuy || onSell) && (
+          <div className="portfolio-modal__transaction">
+            <div className="portfolio-modal__quantity-group">
+              <label className="portfolio-modal__label">Quantity</label>
+              <input
+                type="number"
+                min="1"
+                value={quantity}
+                onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                className="portfolio-modal__quantity-input"
+                disabled={isProcessing}
+              />
+            </div>
+            <div className="portfolio-modal__transaction-info">
+              <span>Price per share: ${price.toFixed(2)}</span>
+              <span className="portfolio-modal__total">Total: ${totalCost.toFixed(2)}</span>
+            </div>
+            <div className="portfolio-modal__actions">
+              {onBuy && (
+                <button 
+                  type="button" 
+                  className="portfolio-modal__primary" 
+                  onClick={handleBuy}
+                  disabled={isProcessing || quantity <= 0}
+                >
+                  {isProcessing ? 'Processing...' : 'Buy'}
+                </button>
+              )}
+              {isInHoldings && onSell && (
+                <button 
+                  type="button" 
+                  className="portfolio-modal__danger" 
+                  onClick={handleSell}
+                  disabled={isProcessing || quantity <= 0}
+                >
+                  {isProcessing ? 'Processing...' : 'Sell'}
+                </button>
+              )}
+            </div>
           </div>
         )}
 
