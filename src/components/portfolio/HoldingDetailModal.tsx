@@ -1,4 +1,5 @@
-import React from 'react';
+﻿import React, { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import {
   Area,
   AreaChart,
@@ -31,6 +32,22 @@ const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({
   onRemove,
   isInHoldings = false
 }) => {
+  const [sharesInput, setSharesInput] = useState<number>(holding?.shares ?? 1);
+
+  const pricePerShare = useMemo(() => {
+    if (!holding) return 0;
+    const price = holding.shares > 0 ? holding.value / holding.shares : holding.value;
+    return Number((price ?? 0).toFixed(2));
+  }, [holding]);
+
+  useEffect(() => {
+    if (holding) {
+      setSharesInput(holding.shares || 1);
+    }
+  }, [holding]);
+
+  const amountHeld = !isInHoldings ? Number((sharesInput * pricePerShare || 0).toFixed(2)) : holding?.value ?? 0;
+
   if (!isOpen || !holding) {
     return null;
   }
@@ -57,7 +74,18 @@ const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({
               </button>
             )}
             {!isInHoldings && onAdd && (
-              <button type="button" className="portfolio-modal__primary" onClick={() => onAdd(holding)}>
+              <button
+                type="button"
+                className="portfolio-modal__primary"
+                onClick={() =>
+                  onAdd({
+                    ...holding,
+                    shares: sharesInput,
+                    value: amountHeld
+                  })
+                }
+                disabled={!sharesInput}
+              >
                 Add holding
               </button>
             )}
@@ -68,22 +96,41 @@ const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({
           <div className="portfolio__modal-info">
             <div>
               <p className="portfolio__label">Amount held</p>
-              <p className="portfolio__modal-value">${holding.value.toLocaleString()}</p>
+              <p className="portfolio__modal-value">
+                ${amountHeld.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              </p>
             </div>
             <div>
               <p className="portfolio__label">Shares</p>
-              <p className="portfolio__modal-value">{holding.shares}</p>
+              {isInHoldings ? (
+                <p className="portfolio__modal-value">{holding.shares}</p>
+              ) : (
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  className="portfolio-modal__input"
+                  value={sharesInput}
+                  onChange={(e) => setSharesInput(Number(e.target.value))}
+                />
+              )}
             </div>
             <div>
-              <p className="portfolio__label">Growth</p>
-              <p
-                className={`portfolio__modal-badge ${
-                  holding.growthPercent >= 0 ? 'portfolio__modal-badge--up' : 'portfolio__modal-badge--down'
-                }`}
-              >
-                {holding.growthPercent >= 0 ? '+' : ''}
-                {holding.growthPercent.toFixed(1)}%
-              </p>
+              <p className="portfolio__label">{isInHoldings ? 'Growth' : 'Price per share'}</p>
+              {isInHoldings ? (
+                <p
+                  className={`portfolio__modal-badge ${
+                    holding.growthPercent >= 0 ? 'portfolio__modal-badge--up' : 'portfolio__modal-badge--down'
+                  }`}
+                >
+                  {holding.growthPercent >= 0 ? '+' : ''}
+                  {holding.growthPercent.toFixed(1)}%
+                </p>
+              ) : (
+                <p className="portfolio__modal-value">
+                  ${pricePerShare.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                </p>
+              )}
             </div>
           </div>
 

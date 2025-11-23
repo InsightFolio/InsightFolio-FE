@@ -100,13 +100,16 @@ const Dashboard: React.FC = () => {
     }));
   };
 
-  const holdingFromStock = (stock: Stock): Holding => ({
-    symbol: stock.symbol,
-    company: stock.company,
-    shares: 10,
-    value: Number(stock.price.toFixed(2)),
-    growthPercent: stock.changePercent
-  });
+  const holdingFromStock = (stock: Stock): Holding => {
+    const price = Number(stock.price ?? 0);
+    return {
+      symbol: stock.symbol,
+      company: stock.company,
+      shares: 1,
+      value: Number(price.toFixed(2)),
+      growthPercent: stock.changePercent
+    };
+  };
 
   const modalChartData = useMemo<PerformancePoint[]>(() => {
     if (!selectedHolding) return [];
