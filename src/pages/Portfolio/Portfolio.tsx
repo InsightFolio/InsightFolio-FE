@@ -4,10 +4,8 @@ import BalanceSection, { PerformancePoint } from '../../components/portfolio/Bal
 import HoldingsSection, { Holding } from '../../components/portfolio/HoldingsSection';
 import HoldingDetailModal from '../../components/portfolio/HoldingDetailModal';
 import { getUserHoldings, processTransaction, getUserAccount } from '../../services/transactionService';
+import { useAuth } from '../../contexts/AuthContext';
 import './Portfolio.css';
-
-// TODO: Replace with actual user ID from authentication context
-const CURRENT_USER_ID = 1;
 
 const portfolioPerformance: PerformancePoint[] = [
   { label: 'Jan', value: 51000 },
@@ -68,28 +66,54 @@ const holdingPerformance: Record<string, PerformancePoint[]> = {
 };
 
 const Portfolio: React.FC = () => {
+  const { user } = useAuth();
+  
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [selectedHolding, setSelectedHolding] = useState<Holding | null>(null);
   const [isModalOpen, setModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [accountBalance, setAccountBalance] = useState(0);
 
+  // Require authentication - redirect to login if no user
+  useEffect(() => {
+    if (!user) {
+      window.location.href = '/login';
+    }
+  }, [user]);
+  
+  const userId = user?.id || 0;
+
   // Fetch holdings from backend
   useEffect(() => {
+    if (!user || userId === 0) return;
+    
     const fetchHoldings = async () => {
       setLoading(true);
       try {
-        const holdingsData = await getUserHoldings(CURRENT_USER_ID);
+        const holdingsData = await getUserHoldings(userId);
         
         // Transform backend holdings to match frontend Holding type
-        const transformedHoldings: Holding[] = holdingsData.map((h: any) => ({
-          symbol: h.symbol || '',
-          company: h.company || h.symbol || '',
-          shares: h.quantity || 0,
-          value: (h.price || 0) * (h.quantity || 0),
-          growthPercent: 0, // TODO: Calculate from historical data
-          stock_id: h.stock_id // Store stock_id for transactions
-        }));
+        const transformedHoldings: Holding[] = holdingsData.map((h: any) => {
+          const symbol = h.stock_symbol || '';
+          const company = h.stock_company || symbol;
+          const quantity = h.quantity || 0;
+          const currentPrice = h.stock_price || 0;
+          const purchasePrice = h.purchase_price || h.cost_basis || h.average_cost || currentPrice;
+          
+          // Calculate growth percentage: ((current - purchase) / purchase) * 100
+          const growthPercent = purchasePrice > 0 
+            ? ((currentPrice - purchasePrice) / purchasePrice) * 100 
+            : 0;
+          
+          return {
+            symbol,
+            company,
+            shares: quantity,
+            value: currentPrice * quantity,
+            growthPercent,
+            stock_id: h.stock_id
+          };
+        });
         
         setHoldings(transformedHoldings);
       } catch (error) {
@@ -101,7 +125,7 @@ const Portfolio: React.FC = () => {
 
     const fetchAccount = async () => {
       try {
-        const account = await getUserAccount(CURRENT_USER_ID);
+        const account = await getUserAccount(userId);
         setAccountBalance(account.balance);
       } catch (error) {
         console.error('Failed to load account:', error);
@@ -110,34 +134,56 @@ const Portfolio: React.FC = () => {
 
     fetchHoldings();
     fetchAccount();
-  }, []);
+  }, [user, userId]);
 
   const refreshHoldings = async () => {
     try {
-      const holdingsData = await getUserHoldings(CURRENT_USER_ID);
-      const transformedHoldings: Holding[] = holdingsData.map((h: any) => ({
-        symbol: h.symbol || '',
-        company: h.company || h.symbol || '',
-        shares: h.quantity || 0,
-        value: (h.price || 0) * (h.quantity || 0),
-        growthPercent: 0,
-        stock_id: h.stock_id
-      }));
+      const holdingsData = await getUserHoldings(userId);
+      const transformedHoldings: Holding[] = holdingsData.map((h: any) => {
+        const symbol = h.stock_symbol || '';
+        const company = h.stock_company || symbol;
+        const quantity = h.quantity || 0;
+        const currentPrice = h.stock_price || 0;
+        const purchasePrice = h.purchase_price || h.cost_basis || h.average_cost || currentPrice;
+        
+        const growthPercent = purchasePrice > 0 
+          ? ((currentPrice - purchasePrice) / purchasePrice) * 100 
+          : 0;
+        
+        return {
+          symbol,
+          company,
+          shares: quantity,
+          value: currentPrice * quantity,
+          growthPercent,
+          stock_id: h.stock_id
+        };
+      });
       setHoldings(transformedHoldings);
 
-      const account = await getUserAccount(CURRENT_USER_ID);
+      const account = await getUserAccount(userId);
       setAccountBalance(account.balance);
     } catch (error) {
       console.error('Failed to refresh holdings:', error);
     }
   };
 
-  const portfolioValue = useMemo(
+  const holdingsValue = useMemo(
     () => holdings.reduce((sum, holding) => sum + holding.value, 0),
     [holdings]
   );
+  const portfolioValue = useMemo(
+    () => holdingsValue + accountBalance,
+    [holdingsValue, accountBalance]
+  );
   const totalShares = useMemo(() => holdings.reduce((sum, h) => sum + h.shares, 0), [holdings]);
-  const portfolioGrowth = 8.7;
+  
+  // Calculate portfolio growth based on holdings
+  const portfolioGrowth = useMemo(() => {
+    if (holdings.length === 0) return 0;
+    const totalGrowth = holdings.reduce((sum, h) => sum + (h.growthPercent * h.value), 0);
+    return holdingsValue > 0 ? totalGrowth / holdingsValue : 0;
+  }, [holdings, holdingsValue]);
 
   const modalChartData = useMemo<PerformancePoint[]>(() => {
     if (!selectedHolding) return [];
@@ -151,7 +197,7 @@ const Portfolio: React.FC = () => {
 
   const handleBuyStock = async (stockId: number, quantity: number) => {
     try {
-      await processTransaction(CURRENT_USER_ID, stockId, 'buy', quantity);
+      await processTransaction(userId, stockId, 'buy', quantity);
       await refreshHoldings();
     } catch (error: any) {
       throw error;
@@ -160,7 +206,7 @@ const Portfolio: React.FC = () => {
 
   const handleSellStock = async (stockId: number, quantity: number) => {
     try {
-      await processTransaction(CURRENT_USER_ID, stockId, 'sell', quantity);
+      await processTransaction(userId, stockId, 'sell', quantity);
       await refreshHoldings();
     } catch (error: any) {
       throw error;
@@ -182,6 +228,7 @@ const Portfolio: React.FC = () => {
               growthPercent={portfolioGrowth}
               holdingsCount={holdings.length}
               totalShares={totalShares}
+              accountBalance={accountBalance}
               performance={portfolioPerformance}
             />
 

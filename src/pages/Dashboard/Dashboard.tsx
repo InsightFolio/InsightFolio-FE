@@ -10,12 +10,10 @@ import type { Holding } from '../../components/portfolio/HoldingsSection';
 import type { PerformancePoint } from '../../components/portfolio/BalanceSection';
 import axios from 'axios';
 import { processTransaction, getStockBySymbol } from '../../services/transactionService';
+import { useAuth } from '../../contexts/AuthContext';
 import './Dashboard.css';
 
 type Stock = StockCardProps;
-
-// TODO: Replace with actual user ID from authentication context
-const CURRENT_USER_ID = 1;
 
 const topScoreStocks: Stock[] = [
   { symbol: 'NVDA', company: 'NVIDIA Corp.', price: 842.22, sector: 'Technology', sub_sector: 'Semiconductors', change: 6.42, changePercent: 0.77 },
@@ -31,6 +29,16 @@ const topScoreStocks: Stock[] = [
 ];
 
 const Dashboard: React.FC = () => {
+  const { user } = useAuth();
+  
+  // Require authentication
+  if (!user) {
+    window.location.href = '/login';
+    return null;
+  }
+  
+  const userId = user.id;
+  
   const [isSearchModalOpen, setSearchModalOpen] = useState(false);
   const [searchResults, setSearchResults] = useState<Stock[]>([]);
   const [popularStocks, setPopularStocks] = useState<Stock[]>([]);
@@ -190,7 +198,7 @@ const Dashboard: React.FC = () => {
 
   const handleBuyStock = async (stockId: number, quantity: number) => {
     try {
-      await processTransaction(CURRENT_USER_ID, stockId, 'buy', quantity);
+      await processTransaction(userId, stockId, 'buy', quantity);
       // Transaction successful - modal will close automatically
     } catch (error: any) {
       throw error; // Re-throw to be handled by modal
@@ -199,7 +207,7 @@ const Dashboard: React.FC = () => {
 
   const handleSellStock = async (stockId: number, quantity: number) => {
     try {
-      await processTransaction(CURRENT_USER_ID, stockId, 'sell', quantity);
+      await processTransaction(userId, stockId, 'sell', quantity);
       // Transaction successful - modal will close automatically
     } catch (error: any) {
       throw error; // Re-throw to be handled by modal

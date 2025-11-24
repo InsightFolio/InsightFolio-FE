@@ -19,6 +19,7 @@ type BalanceSectionProps = {
   growthPercent: number;
   holdingsCount: number;
   totalShares: number;
+  accountBalance: number;
   performance: PerformancePoint[];
 };
 
@@ -27,6 +28,7 @@ const BalanceSection: React.FC<BalanceSectionProps> = ({
   growthPercent,
   holdingsCount,
   totalShares,
+  accountBalance,
   performance
 }) => (
   <section className="portfolio__summary">
@@ -44,6 +46,9 @@ const BalanceSection: React.FC<BalanceSectionProps> = ({
         </div>
         <p className="portfolio__label portfolio__label--muted">
           {holdingsCount} stocks held • Total shares {totalShares}
+        </p>
+        <p className="portfolio__label portfolio__label--muted">
+          Account balance ${accountBalance.toLocaleString()}
         </p>
       </div>
 

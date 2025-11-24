@@ -1,4 +1,4 @@
-import axios from 'axios';
+import apiClient from './apiClient';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://127.0.0.1:5001';
 
@@ -52,11 +52,10 @@ export const processTransaction = async (
   quantity: number
 ): Promise<Transaction> => {
   try {
-    const response = await axios.post(`${API_BASE}/transactions/process`, {
-      user_id: userId,
+    const response = await apiClient.post('/transactions/execute', {
       stock_id: stockId,
-      txn_type: txnType,
-      qty: quantity
+      transaction_type: txnType,
+      quantity: quantity
     });
     return response.data;
   } catch (error: any) {
@@ -78,7 +77,7 @@ export const addTransaction = async (
   price: number
 ): Promise<Transaction> => {
   try {
-    const response = await axios.post(`${API_BASE}/transactions/add`, {
+    const response = await apiClient.post('/transactions/add', {
       email,
       symbol,
       txn_type: txnType,
@@ -99,7 +98,7 @@ export const addTransaction = async (
  */
 export const getUserHoldings = async (userId: number): Promise<Holding[]> => {
   try {
-    const response = await axios.get(`${API_BASE}/holdings/${userId}`);
+    const response = await apiClient.get(`/holdings/${userId}`);
     return response.data;
   } catch (error) {
     console.error('Failed to fetch holdings:', error);
@@ -112,10 +111,15 @@ export const getUserHoldings = async (userId: number): Promise<Holding[]> => {
  */
 export const getUserAccount = async (userId: number): Promise<{ balance: number }> => {
   try {
-    const response = await axios.get(`${API_BASE}/account/${userId}`);
+    const response = await apiClient.get(`/account/${userId}`);
     return response.data;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to fetch account:', error);
+    // If account doesn't exist (404), return default balance of 0
+    if (error.response?.status === 404) {
+      console.warn(`Account not found for user ${userId}, returning default balance of 0`);
+      return { balance: 0 };
+    }
     throw error;
   }
 };
@@ -125,7 +129,7 @@ export const getUserAccount = async (userId: number): Promise<{ balance: number 
  */
 export const getStockBySymbol = async (symbol: string): Promise<any> => {
   try {
-    const response = await axios.get(`${API_BASE}/stocks/${symbol}`);
+    const response = await apiClient.get(`/stocks/${symbol}`);
     return response.data;
   } catch (error) {
     console.error('Failed to fetch stock:', error);
