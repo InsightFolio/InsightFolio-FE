@@ -22,8 +22,8 @@ export type FilterValues = {
 };
 
 const COUNTRIES = ["United States", "Canada", "France", "Netherlands"];
-const SECTORS = ["Technology", "Healthcare", "Finance", "Energy"];
-const SUB_SECTORS = ["Software", "Biotech", "Banking", "Oil & Gas"];
+const SECTORS = ["Technology", "Healthcare", "Financial Services", "Real Estate"];
+const SUB_SECTORS = ["Aerospace & Defense", "Biotechnology", "Asset Management", "Credit Services"];
 
 const FilterButton = ({ type = 'button', onFiltersChange, ...buttonProps }: FilterButtonProps) => {
   const [isOpen, setIsOpen] = useState(false);
