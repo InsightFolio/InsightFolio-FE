@@ -88,3 +88,11 @@
   stroke: currentColor;
   stroke-width: 2;
 }
+
+.stock-card__change-value--up {
+  color: #206f27;
+}
+
+.stock-card__change-value--down {
+  color: #d64545;
+}
