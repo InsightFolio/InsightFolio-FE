@@ -125,6 +125,16 @@
   transition: border-color 0.2s ease;
 }
 
+.portfolio-modal__quantity-input::-webkit-outer-spin-button,
+.portfolio-modal__quantity-input::-webkit-inner-spin-button {
+  opacity: 1;
+  height: 40px;
+}
+
+.portfolio-modal__quantity-input[type="number"] {
+  -moz-appearance: number-input;
+}
+
 .portfolio-modal__quantity-input:focus {
   outline: none;
   border-color: #206f27;

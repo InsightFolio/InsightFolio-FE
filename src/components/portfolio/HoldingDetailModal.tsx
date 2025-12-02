@@ -113,7 +113,14 @@ const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({
                 type="number"
                 min="1"
                 value={quantity}
-                onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value === '' || value === '0') {
+                    setQuantity(1);
+                  } else {
+                    setQuantity(parseInt(value) || 1);
+                  }
+                }}
                 className="portfolio-modal__quantity-input"
                 disabled={isProcessing}
               />

@@ -31,14 +31,6 @@ const topScoreStocks: Stock[] = [
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
   
-  // Require authentication
-  if (!user) {
-    window.location.href = '/login';
-    return null;
-  }
-  
-  const userId = user.id;
-  
   const [isSearchModalOpen, setSearchModalOpen] = useState(false);
   const [searchResults, setSearchResults] = useState<Stock[]>([]);
   const [popularStocks, setPopularStocks] = useState<Stock[]>([]);
@@ -48,6 +40,15 @@ const Dashboard: React.FC = () => {
   const [selectedStockId, setSelectedStockId] = useState<number | null>(null);
   const [isHoldingModalOpen, setHoldingModalOpen] = useState(false);
   const API_BASE = process.env.REACT_APP_API_URL || 'http://127.0.0.1:5001';
+
+  // Require authentication - redirect to login if no user
+  useEffect(() => {
+    if (!user) {
+      window.location.href = '/login';
+    }
+  }, [user]);
+  
+  const userId = user?.id || 0;
 
   const stockPerformance: Record<string, PerformancePoint[]> = useMemo(
     () => ({
@@ -184,7 +185,6 @@ const Dashboard: React.FC = () => {
     setSearchModalOpen(false);
     setSelectedStock(stock);
     
-    // Fetch stock details to get stock_id
     try {
       const stockDetails = await getStockBySymbol(stock.symbol);
       setSelectedStockId(stockDetails.stock_id);
@@ -199,18 +199,16 @@ const Dashboard: React.FC = () => {
   const handleBuyStock = async (stockId: number, quantity: number) => {
     try {
       await processTransaction(userId, stockId, 'buy', quantity);
-      // Transaction successful - modal will close automatically
     } catch (error: any) {
-      throw error; // Re-throw to be handled by modal
+      throw error;
     }
   };
 
   const handleSellStock = async (stockId: number, quantity: number) => {
     try {
       await processTransaction(userId, stockId, 'sell', quantity);
-      // Transaction successful - modal will close automatically
     } catch (error: any) {
-      throw error; // Re-throw to be handled by modal
+      throw error;
     }
   };
 
