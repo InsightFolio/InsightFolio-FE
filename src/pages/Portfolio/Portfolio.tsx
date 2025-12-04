@@ -6,12 +6,19 @@ import HoldingDetailModal from '../../components/portfolio/HoldingDetailModal';
 import './Portfolio.css';
 
 const HOLDINGS_STORAGE_KEY = 'portfolio_holdings';
+const CASH_STORAGE_KEY = 'portfolio_cash';
+const STARTING_CASH = 10000;
+
+const computeHoldingValue = (holding: Holding): number => {
+  const price = holding.price ?? (holding.shares ? holding.value / holding.shares : 0);
+  return Number((price * holding.shares).toFixed(2));
+};
 
 const initialHoldings: Holding[] = [
-  { symbol: 'AAPL', company: 'Apple Inc.', shares: 50, value: 8970, growthPercent: 12.4 },
-  { symbol: 'MSFT', company: 'Microsoft Corp.', shares: 35, value: 14450, growthPercent: 9.1 },
-  { symbol: 'NVDA', company: 'NVIDIA Corp.', shares: 20, value: 16840, growthPercent: 18.6 },
-  { symbol: 'AMZN', company: 'Amazon.com Inc.', shares: 22, value: 7850, growthPercent: 6.3 }
+  { symbol: 'AAPL', company: 'Apple Inc.', shares: 50, price: 179.4, value: 8970, growthPercent: 12.4 },
+  { symbol: 'MSFT', company: 'Microsoft Corp.', shares: 35, price: 412.86, value: 14450.1, growthPercent: 9.1 },
+  { symbol: 'NVDA', company: 'NVIDIA Corp.', shares: 20, price: 842.0, value: 16840, growthPercent: 18.6 },
+  { symbol: 'AMZN', company: 'Amazon.com Inc.', shares: 22, price: 356.82, value: 7850.04, growthPercent: 6.3 }
 ];
 
 const portfolioPerformance: PerformancePoint[] = [
@@ -68,16 +75,26 @@ const holdingPerformance: Record<string, PerformancePoint[]> = {
     { label: 'May', value: 7560 },
     { label: 'Jun', value: 7690 },
     { label: 'Jul', value: 7780 },
-    { label: 'Aug', value: 7850 }
+  { label: 'Aug', value: 7850 }
   ]
 };
 
 const Portfolio: React.FC = () => {
+  const [cash, setCash] = useState<number>(() => {
+    const savedCash = localStorage.getItem(CASH_STORAGE_KEY);
+    const parsed = savedCash ? Number(savedCash) : NaN;
+    return Number.isFinite(parsed) ? parsed : STARTING_CASH;
+  });
   const [holdings, setHoldings] = useState<Holding[]>(() => {
     try {
       const saved = localStorage.getItem(HOLDINGS_STORAGE_KEY);
       if (saved) {
-        return JSON.parse(saved) as Holding[];
+          const parsed = JSON.parse(saved) as Holding[];
+          return parsed.map((h) => {
+            const price = h.price ?? (h.shares ? h.value / h.shares : 0);
+            const normalizedValue = computeHoldingValue({ ...h, price });
+            return { ...h, price, value: normalizedValue };
+          });
       }
     } catch (e) {
       console.warn('Failed to parse saved holdings', e);
@@ -91,12 +108,22 @@ const Portfolio: React.FC = () => {
     localStorage.setItem(HOLDINGS_STORAGE_KEY, JSON.stringify(holdings));
   }, [holdings]);
 
-  const portfolioValue = useMemo(
-    () => holdings.reduce((sum, holding) => sum + holding.value, 0),
+  React.useEffect(() => {
+    localStorage.setItem(CASH_STORAGE_KEY, String(cash));
+  }, [cash]);
+
+  const holdingsValue = useMemo(
+    () => holdings.reduce((sum, holding) => sum + computeHoldingValue(holding), 0),
     [holdings]
   );
+
+  const totalBalance = holdingsValue + cash;
+  const portfolioValue = useMemo(
+    () => totalBalance,
+    [totalBalance]
+  );
   const totalShares = useMemo(() => holdings.reduce((sum, h) => sum + h.shares, 0), [holdings]);
-  const portfolioGrowth = 8.7;
+  const portfolioGrowth = ((totalBalance - STARTING_CASH) / STARTING_CASH) * 100;
 
   const modalChartData = useMemo<PerformancePoint[]>(() => {
     if (!selectedHolding) return [];
@@ -109,7 +136,13 @@ const Portfolio: React.FC = () => {
   };
 
   const handleRemoveHolding = (holding: Holding) => {
-    setHoldings((prev) => prev.filter((h) => h.symbol !== holding.symbol));
+    setHoldings((prev) => {
+      const toRemove = prev.find((h) => h.symbol === holding.symbol);
+      if (toRemove) {
+        setCash((c) => c + computeHoldingValue(toRemove));
+      }
+      return prev.filter((h) => h.symbol !== holding.symbol);
+    });
     setModalOpen(false);
     setSelectedHolding(null);
   };
@@ -118,9 +151,20 @@ const Portfolio: React.FC = () => {
     setHoldings((prev) => {
       const exists = prev.some((h) => h.symbol === holding.symbol);
       if (exists) {
-        return prev.map((h) => (h.symbol === holding.symbol ? holding : h));
+        const prevHolding = prev.find((h) => h.symbol === holding.symbol);
+        const prevValue = prevHolding ? computeHoldingValue(prevHolding) : 0;
+        const nextValue = computeHoldingValue(holding);
+        const delta = nextValue - prevValue;
+        if (delta !== 0) {
+          setCash((c) => c - delta);
+        }
+        const normalized = { ...holding, value: nextValue };
+        return prev.map((h) => (h.symbol === holding.symbol ? normalized : h));
       }
-      return [...prev, holding];
+      const nextValue = computeHoldingValue(holding);
+      setCash((c) => c - nextValue);
+      const normalized = { ...holding, value: nextValue };
+      return [...prev, normalized];
     });
     setModalOpen(false);
   };

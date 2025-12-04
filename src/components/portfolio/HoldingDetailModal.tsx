@@ -36,7 +36,7 @@ const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({
 
   const pricePerShare = useMemo(() => {
     if (!holding) return 0;
-    const price = holding.shares > 0 ? holding.value / holding.shares : holding.value;
+    const price = holding.price ?? (holding.shares > 0 ? holding.value / holding.shares : holding.value);
     return Number((price ?? 0).toFixed(2));
   }, [holding]);
 
@@ -46,11 +46,11 @@ const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({
     }
   }, [holding]);
 
-  const amountHeld = !isInHoldings ? Number((sharesInput * pricePerShare || 0).toFixed(2)) : holding?.value ?? 0;
-
   if (!isOpen || !holding) {
     return null;
   }
+
+  const amountHeld = Number(((isInHoldings ? holding.shares : sharesInput) * pricePerShare || 0).toFixed(2));
 
   return (
     <div className="portfolio-modal-overlay" role="dialog" aria-modal="true" aria-label="Holding details">
@@ -81,6 +81,7 @@ const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({
                   onAdd({
                     ...holding,
                     shares: sharesInput,
+                    price: pricePerShare,
                     value: amountHeld
                   })
                 }

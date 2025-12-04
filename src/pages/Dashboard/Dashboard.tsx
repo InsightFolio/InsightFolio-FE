@@ -13,6 +13,13 @@ import './Dashboard.css';
 
 type Stock = StockCardProps;
 const HOLDINGS_STORAGE_KEY = 'portfolio_holdings';
+const CASH_STORAGE_KEY = 'portfolio_cash';
+const STARTING_CASH = 10000;
+
+const computeHoldingValue = (holding: Holding): number => {
+  const price = holding.price ?? (holding.shares ? holding.value / holding.shares : 0);
+  return Number((price * holding.shares).toFixed(2));
+};
 
 const topScoreStocks: Stock[] = [
   { symbol: 'NVDA', company: 'NVIDIA Corp.', price: 842.22, sector: 'Technology', sub_sector: 'Semiconductors', change: 6.42, changePercent: 0.77 },
@@ -33,10 +40,22 @@ const Dashboard: React.FC = () => {
   const [popularStocks, setPopularStocks] = useState<Stock[]>([]);
   const [popularLoading, setPopularLoading] = useState(false);
   const [popularError, setPopularError] = useState<string | null>(null);
+  const [cash, setCash] = useState<number>(() => {
+    const savedCash = localStorage.getItem(CASH_STORAGE_KEY);
+    const parsedCash = savedCash ? Number(savedCash) : NaN;
+    return Number.isFinite(parsedCash) ? parsedCash : STARTING_CASH;
+  });
   const [holdings, setHoldings] = useState<Holding[]>(() => {
     try {
       const saved = localStorage.getItem(HOLDINGS_STORAGE_KEY);
-      if (saved) return JSON.parse(saved) as Holding[];
+      if (saved) {
+        const parsed = JSON.parse(saved) as Holding[];
+        return parsed.map((h) => {
+          const price = h.price ?? (h.shares ? h.value / h.shares : 0);
+          const normalizedValue = computeHoldingValue({ ...h, price });
+          return { ...h, price, value: normalizedValue };
+        });
+      }
     } catch (e) {
       console.warn('Failed to parse saved holdings', e);
     }
@@ -106,6 +125,7 @@ const Dashboard: React.FC = () => {
       symbol: stock.symbol,
       company: stock.company,
       shares: 1,
+      price: Number(price.toFixed(2)),
       value: Number(price.toFixed(2)),
       growthPercent: stock.changePercent
     };
@@ -113,12 +133,17 @@ const Dashboard: React.FC = () => {
 
   const modalChartData = useMemo<PerformancePoint[]>(() => {
     if (!selectedHolding) return [];
-    return stockPerformance[selectedHolding.symbol] || fallbackPerformance(selectedHolding.value);
+    const holdingValue = computeHoldingValue(selectedHolding);
+    return stockPerformance[selectedHolding.symbol] || fallbackPerformance(holdingValue);
   }, [selectedHolding, stockPerformance]);
 
   useEffect(() => {
     localStorage.setItem(HOLDINGS_STORAGE_KEY, JSON.stringify(holdings));
   }, [holdings]);
+
+  useEffect(() => {
+    localStorage.setItem(CASH_STORAGE_KEY, String(cash));
+  }, [cash]);
 
   useEffect(() => {
     const fetchPopular = async () => {
@@ -200,18 +225,32 @@ const Dashboard: React.FC = () => {
   };
 
   const handleAddHolding = (holding: Holding) => {
+    const nextValue = computeHoldingValue(holding);
+    const holdingWithValue = { ...holding, value: nextValue };
     setHoldings((prev) => {
-      const exists = prev.some((h) => h.symbol === holding.symbol);
-      if (exists) {
-        return prev.map((h) => (h.symbol === holding.symbol ? holding : h));
+      const existing = prev.find((h) => h.symbol === holding.symbol);
+      const prevValue = existing ? computeHoldingValue(existing) : 0;
+      const delta = nextValue - prevValue;
+      if (delta !== 0) {
+        setCash((c) => c - delta);
       }
-      return [...prev, holding];
+
+      if (existing) {
+        return prev.map((h) => (h.symbol === holding.symbol ? holdingWithValue : h));
+      }
+      return [...prev, holdingWithValue];
     });
     setHoldingModalOpen(false);
   };
 
   const handleRemoveHolding = (holding: Holding) => {
-    setHoldings((prev) => prev.filter((h) => h.symbol !== holding.symbol));
+    setHoldings((prev) => {
+      const toRemove = prev.find((h) => h.symbol === holding.symbol);
+      if (toRemove) {
+        setCash((c) => c + computeHoldingValue(toRemove));
+      }
+      return prev.filter((h) => h.symbol !== holding.symbol);
+    });
     setHoldingModalOpen(false);
     setSelectedHolding(null);
   };

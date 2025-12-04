@@ -4,6 +4,7 @@ export type Holding = {
   symbol: string;
   company: string;
   shares: number;
+  price: number;
   value: number;
   growthPercent: number;
 };
@@ -46,7 +47,7 @@ const HoldingsSection: React.FC<HoldingsSectionProps> = ({ holdings, onSelect })
             {holding.shares}
           </span>
           <span role="cell" className="stock-list__cell stock-list__cell--value">
-            ${holding.value.toLocaleString()}
+            ${(holding.price * holding.shares).toLocaleString(undefined, { minimumFractionDigits: 2 })}
           </span>
           <span
             role="cell"
