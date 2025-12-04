@@ -113,7 +113,7 @@
 }
 
 .portfolio__row {
-  grid-template-columns: minmax(90px, 0.7fr) minmax(200px, 1.5fr) minmax(160px, 1.1fr) minmax(120px, 0.8fr);
+  grid-template-columns: minmax(90px, 0.7fr) minmax(200px, 1.5fr) minmax(100px, 0.8fr) minmax(160px, 1.1fr) minmax(120px, 0.8fr);
 }
 
 .portfolio__cell-growth {

@@ -24,12 +24,16 @@ const StockCard: React.FC<StockCardProps> = ({
   onSelect
 }) => {
   const isPositive = change >= 0;
-  const changeSign = isPositive ? '+' : '';
   const trendIcon = isPositive ? (
     <TrendingUp className="stock-card__trend-icon" aria-hidden="true" />
   ) : (
     <TrendingDown className="stock-card__trend-icon" aria-hidden="true" />
   );
+
+  const formatSigned = (value: number) => {
+    const sign = value > 0 ? '+' : value < 0 ? '-' : '';
+    return `${sign}${Math.abs(value).toFixed(2)}`;
+  };
 
   return (
     <article
@@ -57,8 +61,20 @@ const StockCard: React.FC<StockCardProps> = ({
       <div className="stock-card__metrics">
         <div className="stock-card__price">${price.toFixed(2)}</div>
         <div className="stock-card__change">
-          <span>{`${changeSign}${change.toFixed(2)}`}</span>
-          <span>{`${changeSign}${changePercent.toFixed(2)}%`}</span>
+          <span
+            className={`stock-card__change-value ${
+              change >= 0 ? 'stock-card__change-value--up' : 'stock-card__change-value--down'
+            }`}
+          >
+            {formatSigned(change)}
+          </span>
+          <span
+            className={`stock-card__change-value ${
+              changePercent >= 0 ? 'stock-card__change-value--up' : 'stock-card__change-value--down'
+            }`}
+          >
+            {`${formatSigned(changePercent)}%`}
+          </span>
         </div>
       </div>
     </article>

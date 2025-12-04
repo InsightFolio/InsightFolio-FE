@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import {
   Area,
   AreaChart,
@@ -158,22 +159,41 @@ const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({
           <div className="portfolio__modal-info">
             <div>
               <p className="portfolio__label">Amount held</p>
-              <p className="portfolio__modal-value">${holding.value.toLocaleString()}</p>
+              <p className="portfolio__modal-value">
+                ${amountHeld.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              </p>
             </div>
             <div>
               <p className="portfolio__label">Shares</p>
-              <p className="portfolio__modal-value">{holding.shares}</p>
+              {isInHoldings ? (
+                <p className="portfolio__modal-value">{holding.shares}</p>
+              ) : (
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  className="portfolio-modal__input"
+                  value={sharesInput}
+                  onChange={(e) => setSharesInput(Number(e.target.value))}
+                />
+              )}
             </div>
             <div>
-              <p className="portfolio__label">Growth</p>
-              <p
-                className={`portfolio__modal-badge ${
-                  holding.growthPercent >= 0 ? 'portfolio__modal-badge--up' : 'portfolio__modal-badge--down'
-                }`}
-              >
-                {holding.growthPercent >= 0 ? '+' : ''}
-                {holding.growthPercent.toFixed(1)}%
-              </p>
+              <p className="portfolio__label">{isInHoldings ? 'Growth' : 'Price per share'}</p>
+              {isInHoldings ? (
+                <p
+                  className={`portfolio__modal-badge ${
+                    holding.growthPercent >= 0 ? 'portfolio__modal-badge--up' : 'portfolio__modal-badge--down'
+                  }`}
+                >
+                  {holding.growthPercent >= 0 ? '+' : ''}
+                  {holding.growthPercent.toFixed(1)}%
+                </p>
+              ) : (
+                <p className="portfolio__modal-value">
+                  ${pricePerShare.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                </p>
+              )}
             </div>
           </div>
 

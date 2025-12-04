@@ -168,6 +168,14 @@
   color: #d64545;
   font-weight: 600;
   margin-bottom: 12px;
+  
+.portfolio-modal__input {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(33, 34, 39, 0.2);
+  font-weight: 700;
+  color: #212227;
 }
 
 @media (max-width: 640px) {

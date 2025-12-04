@@ -25,6 +25,7 @@ const HoldingsSection: React.FC<HoldingsSectionProps> = ({ holdings, onSelect })
       <div className="stock-list__row stock-list__row--header portfolio__row">
         <span role="columnheader">Symbol</span>
         <span role="columnheader">Company</span>
+        <span role="columnheader">Shares</span>
         <span role="columnheader">Amount Held</span>
         <span role="columnheader">% Growth</span>
       </div>
@@ -41,6 +42,9 @@ const HoldingsSection: React.FC<HoldingsSectionProps> = ({ holdings, onSelect })
           </span>
           <span role="cell" className="stock-list__cell stock-list__cell--company">
             {holding.company}
+          </span>
+          <span role="cell" className="stock-list__cell stock-list__cell--shares">
+            {holding.shares}
           </span>
           <span role="cell" className="stock-list__cell stock-list__cell--value">
             ${holding.value.toLocaleString()}
