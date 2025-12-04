@@ -9,10 +9,11 @@ import HoldingDetailModal from '../../components/portfolio/HoldingDetailModal';
 import type { Holding } from '../../components/portfolio/HoldingsSection';
 import type { PerformancePoint } from '../../components/portfolio/BalanceSection';
 import axios from 'axios';
+import { processTransaction, getStockBySymbol } from '../../services/transactionService';
+import { useAuth } from '../../contexts/AuthContext';
 import './Dashboard.css';
 
 type Stock = StockCardProps;
-const HOLDINGS_STORAGE_KEY = 'portfolio_holdings';
 
 const topScoreStocks: Stock[] = [
   { symbol: 'NVDA', company: 'NVIDIA Corp.', price: 842.22, sector: 'Technology', sub_sector: 'Semiconductors', change: 6.42, changePercent: 0.77 },
@@ -28,23 +29,26 @@ const topScoreStocks: Stock[] = [
 ];
 
 const Dashboard: React.FC = () => {
+  const { user } = useAuth();
+  
   const [isSearchModalOpen, setSearchModalOpen] = useState(false);
   const [searchResults, setSearchResults] = useState<Stock[]>([]);
   const [popularStocks, setPopularStocks] = useState<Stock[]>([]);
   const [popularLoading, setPopularLoading] = useState(false);
   const [popularError, setPopularError] = useState<string | null>(null);
-  const [holdings, setHoldings] = useState<Holding[]>(() => {
-    try {
-      const saved = localStorage.getItem(HOLDINGS_STORAGE_KEY);
-      if (saved) return JSON.parse(saved) as Holding[];
-    } catch (e) {
-      console.warn('Failed to parse saved holdings', e);
-    }
-    return [];
-  });
-  const [selectedHolding, setSelectedHolding] = useState<Holding | null>(null);
+  const [selectedStock, setSelectedStock] = useState<Stock | null>(null);
+  const [selectedStockId, setSelectedStockId] = useState<number | null>(null);
   const [isHoldingModalOpen, setHoldingModalOpen] = useState(false);
   const API_BASE = process.env.REACT_APP_API_URL || 'http://127.0.0.1:5001';
+
+  // Require authentication - redirect to login if no user
+  useEffect(() => {
+    if (!user) {
+      window.location.href = '/login';
+    }
+  }, [user]);
+  
+  const userId = user?.id || 0;
 
   const stockPerformance: Record<string, PerformancePoint[]> = useMemo(
     () => ({
@@ -100,25 +104,18 @@ const Dashboard: React.FC = () => {
     }));
   };
 
-  const holdingFromStock = (stock: Stock): Holding => {
-    const price = Number(stock.price ?? 0);
-    return {
-      symbol: stock.symbol,
-      company: stock.company,
-      shares: 1,
-      value: Number(price.toFixed(2)),
-      growthPercent: stock.changePercent
-    };
-  };
+  const holdingFromStock = (stock: Stock): Holding => ({
+    symbol: stock.symbol,
+    company: stock.company,
+    shares: 0,
+    value: stock.price,
+    growthPercent: stock.changePercent
+  });
 
   const modalChartData = useMemo<PerformancePoint[]>(() => {
-    if (!selectedHolding) return [];
-    return stockPerformance[selectedHolding.symbol] || fallbackPerformance(selectedHolding.value);
-  }, [selectedHolding, stockPerformance]);
-
-  useEffect(() => {
-    localStorage.setItem(HOLDINGS_STORAGE_KEY, JSON.stringify(holdings));
-  }, [holdings]);
+    if (!selectedStock) return [];
+    return stockPerformance[selectedStock.symbol] || fallbackPerformance(selectedStock.price);
+  }, [selectedStock, stockPerformance]);
 
   useEffect(() => {
     const fetchPopular = async () => {
@@ -192,31 +189,36 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const handleSelectStock = (stock: Stock) => {
+  const handleSelectStock = async (stock: Stock) => {
     setSearchModalOpen(false);
-    const holding = holdingFromStock(stock);
-    setSelectedHolding(holding);
+    setSelectedStock(stock);
+    
+    try {
+      const stockDetails = await getStockBySymbol(stock.symbol);
+      setSelectedStockId(stockDetails.stock_id);
+    } catch (error) {
+      console.error('Failed to fetch stock details:', error);
+      setSelectedStockId(null);
+    }
+    
     setHoldingModalOpen(true);
   };
 
-  const handleAddHolding = (holding: Holding) => {
-    setHoldings((prev) => {
-      const exists = prev.some((h) => h.symbol === holding.symbol);
-      if (exists) {
-        return prev.map((h) => (h.symbol === holding.symbol ? holding : h));
-      }
-      return [...prev, holding];
-    });
-    setHoldingModalOpen(false);
+  const handleBuyStock = async (stockId: number, quantity: number) => {
+    try {
+      await processTransaction(userId, stockId, 'buy', quantity);
+    } catch (error: any) {
+      throw error;
+    }
   };
 
-  const handleRemoveHolding = (holding: Holding) => {
-    setHoldings((prev) => prev.filter((h) => h.symbol !== holding.symbol));
-    setHoldingModalOpen(false);
-    setSelectedHolding(null);
+  const handleSellStock = async (stockId: number, quantity: number) => {
+    try {
+      await processTransaction(userId, stockId, 'sell', quantity);
+    } catch (error: any) {
+      throw error;
+    }
   };
-
-  const isInHoldings = selectedHolding ? holdings.some((h) => h.symbol === selectedHolding.symbol) : false;
 
   return (
     <div className="dashboard">
@@ -249,13 +251,15 @@ const Dashboard: React.FC = () => {
       </main>
 
       <HoldingDetailModal
-        holding={selectedHolding}
+        holding={selectedStock ? holdingFromStock(selectedStock) : null}
         data={modalChartData}
         isOpen={isHoldingModalOpen}
         onClose={() => setHoldingModalOpen(false)}
-        onAdd={handleAddHolding}
-        onRemove={handleRemoveHolding}
-        isInHoldings={isInHoldings}
+        onBuy={handleBuyStock}
+        onSell={handleSellStock}
+        isInHoldings={false}
+        currentPrice={selectedStock?.price}
+        stockId={selectedStockId || undefined}
       />
     </div>
   );

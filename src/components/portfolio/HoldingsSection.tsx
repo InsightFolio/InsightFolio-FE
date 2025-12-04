@@ -6,6 +6,7 @@ export type Holding = {
   shares: number;
   value: number;
   growthPercent: number;
+  stock_id?: number;
 };
 
 type HoldingsSectionProps = {
@@ -30,7 +31,7 @@ const HoldingsSection: React.FC<HoldingsSectionProps> = ({ holdings, onSelect })
       </div>
       {holdings.map((holding) => (
         <button
-          key={holding.symbol}
+          key={holding.stock_id || holding.symbol}
           type="button"
           className="stock-list__row portfolio__row"
           role="row"

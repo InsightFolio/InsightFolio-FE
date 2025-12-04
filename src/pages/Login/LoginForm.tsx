@@ -3,6 +3,7 @@ import TextField from '../../components/form/TextField';
 import PrimaryButton from '../../components/form/PrimaryButton';
 import styles from './LoginForm.module.css';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import axios from 'axios';
 
 type LoginValues = {
@@ -28,6 +29,24 @@ const LoginForm = () => {
       })
 
       console.log('Login success:', response.data);
+      
+      // Store JWT token - backend returns "token" not "access_token"
+      const token = response.data.token || response.data.access_token;
+      if (token) {
+        localStorage.setItem('token', token);
+      }
+      
+      // Store user data in auth context
+      if (response.data.user) {
+        const user = {
+          id: response.data.user.user_id,
+          email: response.data.user.email,
+          username: response.data.user.username
+        };
+        localStorage.setItem('user', JSON.stringify(user));
+      }
+      
+      // Navigate to dashboard
       navigate('/dashboard');
 
     } catch (error) {
