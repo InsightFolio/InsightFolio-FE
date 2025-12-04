@@ -131,6 +131,8 @@ const Dashboard: React.FC = () => {
           symbol: stock.symbol,
           company: stock.company,
           price: stock.price,
+          sector: stock.sector || 'N/A',
+          sub_sector: stock.sub_sector || 'N/A',
           change:
             typeof stock.change === 'number' && stock.change !== 0
               ? stock.change

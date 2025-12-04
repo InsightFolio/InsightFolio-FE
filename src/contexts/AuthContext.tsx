@@ -9,6 +9,7 @@ type User = {
 type AuthContextType = {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
+  setUserData: (user: User) => void;
   logout: () => void;
   isAuthenticated: boolean;
 };
@@ -39,6 +40,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.setItem('user', JSON.stringify(mockUser));
   };
 
+  const setUserData = (userData: User) => {
+    setUser(userData);
+    localStorage.setItem('user', JSON.stringify(userData));
+  };
+
   const logout = () => {
     setUser(null);
     localStorage.removeItem('user');
@@ -46,7 +52,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ user, login, setUserData, logout, isAuthenticated: !!user }}>
       {children}
     </AuthContext.Provider>
   );

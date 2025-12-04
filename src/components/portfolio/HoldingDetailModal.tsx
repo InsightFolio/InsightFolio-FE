@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from 'react';
-import { useMemo } from 'react';
+import React, { useState } from 'react';
 import {
   Area,
   AreaChart,
@@ -160,23 +159,12 @@ const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({
             <div>
               <p className="portfolio__label">Amount held</p>
               <p className="portfolio__modal-value">
-                ${amountHeld.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                ${(holding.value * holding.shares).toLocaleString(undefined, { minimumFractionDigits: 2 })}
               </p>
             </div>
             <div>
               <p className="portfolio__label">Shares</p>
-              {isInHoldings ? (
-                <p className="portfolio__modal-value">{holding.shares}</p>
-              ) : (
-                <input
-                  type="number"
-                  min="0"
-                  step="1"
-                  className="portfolio-modal__input"
-                  value={sharesInput}
-                  onChange={(e) => setSharesInput(Number(e.target.value))}
-                />
-              )}
+              <p className="portfolio__modal-value">{holding.shares}</p>
             </div>
             <div>
               <p className="portfolio__label">{isInHoldings ? 'Growth' : 'Price per share'}</p>
@@ -191,7 +179,7 @@ const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({
                 </p>
               ) : (
                 <p className="portfolio__modal-value">
-                  ${pricePerShare.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  ${price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                 </p>
               )}
             </div>
