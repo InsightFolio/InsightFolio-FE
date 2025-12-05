@@ -46,6 +46,7 @@ const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({
 
   const price = currentPrice || holding.value / (holding.shares || 1);
   const totalCost = price * quantity;
+  const amountHeld = holding.value;
 
   const handleBuy = async () => {
     if (!onBuy || quantity <= 0 || !stockId) return;
@@ -173,8 +174,8 @@ const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({
                   min="0"
                   step="1"
                   className="portfolio-modal__input"
-                  value={sharesInput}
-                  onChange={(e) => setSharesInput(Number(e.target.value))}
+                  value={quantity}
+                  onChange={(e) => setQuantity(Number(e.target.value))}
                 />
               )}
             </div>
@@ -191,7 +192,7 @@ const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({
                 </p>
               ) : (
                 <p className="portfolio__modal-value">
-                  ${pricePerShare.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  ${price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                 </p>
               )}
             </div>
