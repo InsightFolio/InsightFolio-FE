@@ -51,17 +51,32 @@ const BalanceSection: React.FC<BalanceSectionProps> = ({
 
   const getXAxisTicks = () => {
     if (performance.length === 0) return [];
+    if (performance.length === 1) return [performance[0].label];
     
-    const indices = {
-      '3D': [0, -1],
-      '1W': [0, Math.floor(performance.length / 2), -1],
-      '1M': [0, Math.floor(performance.length / 3), Math.floor(performance.length * 2 / 3), -1],
-      'YTD': [0, Math.floor(performance.length / 4), Math.floor(performance.length / 2), Math.floor(performance.length * 3 / 4), -1]
-    };
+    const len = performance.length;
+    let indices: number[] = [];
     
-    const tickIndices = indices[activeFilter].map(i => i < 0 ? performance.length + i : i);
-    const uniqueIndices = Array.from(new Set(tickIndices)).sort((a, b) => a - b);
+    // Adjust tick selection based on data length
+    if (len === 2) {
+      indices = [0, 1];
+    } else if (len <= 4) {
+      indices = [0, len - 1];
+    } else if (len <= 7) {
+      // For small datasets, show first, middle, and last
+      indices = [0, Math.floor(len / 2), len - 1];
+    } else {
+      // For larger datasets, use filter-based logic
+      const indexMap = {
+        '3D': [0, len - 1],
+        '1W': [0, Math.floor(len / 2), len - 1],
+        '1M': [0, Math.floor(len / 3), Math.floor(len * 2 / 3), len - 1],
+        'YTD': [0, Math.floor(len / 4), Math.floor(len / 2), Math.floor(len * 3 / 4), len - 1]
+      };
+      indices = indexMap[activeFilter];
+    }
     
+    // Remove duplicates and sort
+    const uniqueIndices = Array.from(new Set(indices)).sort((a, b) => a - b);
     return uniqueIndices.map(i => performance[i].label);
   };
 
@@ -178,7 +193,8 @@ const BalanceSection: React.FC<BalanceSectionProps> = ({
                 tick={{ fill: 'rgba(33, 34, 39, 0.65)', fontWeight: 600 }}
                 axisLine={{ stroke: 'rgba(33, 34, 39, 0.2)' }}
                 tickLine={false}
-                ticks={getXAxisTicks()}
+                interval="preserveStartEnd"
+                minTickGap={30}
               />
               <YAxis
                 tick={{ fill: 'rgba(33, 34, 39, 0.65)', fontWeight: 600 }}
