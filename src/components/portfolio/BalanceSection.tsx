@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Area,
   AreaChart,
@@ -8,6 +8,13 @@ import {
   XAxis,
   YAxis
 } from 'recharts';
+import { 
+  FILTER_LABELS, 
+  TIME_FILTERS, 
+  getYAxisDomain, 
+  getYAxisTicks, 
+  formatYAxisTick 
+} from '../../utils/chartHelpers';
 
 export type PerformancePoint = {
   label: string;
@@ -42,65 +49,21 @@ const BalanceSection: React.FC<BalanceSectionProps> = ({
     onTimeFilterChange?.(filter);
   };
 
-  const filterLabels: Record<TimeFilter, string> = {
-    '3D': 'Past 3 days',
-    '1W': 'Past week',
-    '1M': 'Past month',
-    'YTD': 'Year to date'
-  };
+  const yAxisDomain = useMemo(() => getYAxisDomain(performance), [performance]);
+  const yAxisTicks = useMemo(() => getYAxisTicks(performance, yAxisDomain, activeFilter), [performance, yAxisDomain, activeFilter]);
 
   const getXAxisTicks = () => {
     if (performance.length === 0) return [];
     
-    const indices = {
+    const len = performance.length;
+    const indices: Record<TimeFilter, number[]> = {
       '3D': [0, -1],
-      '1W': [0, Math.floor(performance.length / 2), -1],
-      '1M': [0, Math.floor(performance.length / 3), Math.floor(performance.length * 2 / 3), -1],
-      'YTD': [0, Math.floor(performance.length / 4), Math.floor(performance.length / 2), Math.floor(performance.length * 3 / 4), -1]
+      '1W': [0, Math.floor(len / 2), -1],
+      '1M': [0, Math.floor(len / 3), Math.floor(len * 2 / 3), -1],
+      'YTD': [0, Math.floor(len / 4), Math.floor(len / 2), Math.floor(len * 3 / 4), -1]
     };
     
-    return indices[activeFilter].map(i => performance[i < 0 ? performance.length + i : i].label);
-  };
-
-  const getYAxisDomain = (): [number, number] => {
-    if (performance.length === 0) return [0, 10000];
-    
-    const values = performance.map(p => p.value);
-    const min = Math.min(...values);
-    const max = Math.max(...values);
-    const padding = (max - min) * 0.1;
-    
-    return [Math.max(0, min - padding), max + padding];
-  };
-
-  const getYAxisTicks = () => {
-    if (performance.length === 0) return undefined;
-    
-    const [min, max] = getYAxisDomain();
-    const range = max - min;
-    const step = range / 4; // Create 5 ticks
-    
-    const ticks: number[] = [];
-    for (let i = 0; i <= 4; i++) {
-      ticks.push(min + (step * i));
-    }
-    
-    // Check for duplicate formatted values
-    const decimals = activeFilter === '3D' || activeFilter === '1W' ? 2 : 1;
-    const formatted = new Set<string>();
-    const uniqueTicks: number[] = [];
-    
-    for (const tick of ticks) {
-      const kValue = tick / 1000;
-      const label = `$${kValue.toFixed(decimals)}k`;
-      
-      if (!formatted.has(label)) {
-        formatted.add(label);
-        uniqueTicks.push(tick);
-      }
-    }
-    
-    return uniqueTicks.length >= 3 ? uniqueTicks : undefined;
+    return indices[activeFilter].map(i => performance[i < 0 ? len + i : i].label);
   };
 
   const graphColor = growthPercent >= 0 ? '#206f27' : '#d64545';
@@ -132,32 +95,17 @@ const BalanceSection: React.FC<BalanceSectionProps> = ({
           <h3>Balance over time</h3>
           <div className="portfolio__chart-controls">
             <div className="portfolio__time-filters">
-              <button
-                className={`portfolio__time-filter ${activeFilter === '3D' ? 'portfolio__time-filter--active' : ''}`}
-                onClick={() => handleFilterClick('3D')}
-              >
-                3D
-              </button>
-              <button
-                className={`portfolio__time-filter ${activeFilter === '1W' ? 'portfolio__time-filter--active' : ''}`}
-                onClick={() => handleFilterClick('1W')}
-              >
-                1W
-              </button>
-              <button
-                className={`portfolio__time-filter ${activeFilter === '1M' ? 'portfolio__time-filter--active' : ''}`}
-                onClick={() => handleFilterClick('1M')}
-              >
-                1M
-              </button>
-              <button
-                className={`portfolio__time-filter ${activeFilter === 'YTD' ? 'portfolio__time-filter--active' : ''}`}
-                onClick={() => handleFilterClick('YTD')}
-              >
-                YTD
-              </button>
+              {TIME_FILTERS.map(filter => (
+                <button
+                  key={filter}
+                  className={`portfolio__time-filter ${activeFilter === filter ? 'portfolio__time-filter--active' : ''}`}
+                  onClick={() => handleFilterClick(filter)}
+                >
+                  {filter}
+                </button>
+              ))}
             </div>
-            <span className="portfolio__label portfolio__label--muted">{filterLabels[activeFilter]}</span>
+            <span className="portfolio__label portfolio__label--muted">{FILTER_LABELS[activeFilter]}</span>
           </div>
         </div>
         <div className="portfolio__chart-wrapper">
@@ -181,16 +129,9 @@ const BalanceSection: React.FC<BalanceSectionProps> = ({
                 tick={{ fill: 'rgba(33, 34, 39, 0.65)', fontWeight: 600 }}
                 axisLine={{ stroke: 'rgba(33, 34, 39, 0.2)' }}
                 tickLine={false}
-                tickFormatter={(value: number) => {
-                  const decimals = activeFilter === '3D' || activeFilter === '1W' ? 2 : 1;
-                  if (value >= 1000) {
-                    const kValue = value / 1000;
-                    return `$${kValue.toFixed(decimals)}k`;
-                  }
-                  return `$${value.toFixed(0)}`;
-                }}
-                domain={getYAxisDomain()}
-                ticks={getYAxisTicks()}
+                tickFormatter={(value: number) => formatYAxisTick(value, activeFilter)}
+                domain={yAxisDomain}
+                ticks={yAxisTicks}
                 scale="linear"
               />
               <Tooltip
