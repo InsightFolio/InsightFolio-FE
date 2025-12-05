@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from 'react';
-import { useMemo } from 'react';
+import React, { useState } from 'react';
 import {
   Area,
   AreaChart,
@@ -161,7 +160,7 @@ const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({
             <div>
               <p className="portfolio__label">Amount held</p>
               <p className="portfolio__modal-value">
-                ${amountHeld.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                ${(holding.value * holding.shares).toLocaleString(undefined, { minimumFractionDigits: 2 })}
               </p>
             </div>
             <div>
