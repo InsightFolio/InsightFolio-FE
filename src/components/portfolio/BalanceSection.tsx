@@ -34,7 +34,7 @@ const BalanceSection: React.FC<BalanceSectionProps> = ({
   <section className="portfolio__summary">
     <div className="portfolio__summary-grid">
       <div className="portfolio__summary-info">
-        <p className="portfolio__label">Current balance</p>
+        <p className="portfolio__label">Holdings Value</p>
         <div className="portfolio__balance-row">
           <span className="portfolio__balance">${totalValue.toLocaleString()}</span>
           <span

@@ -73,6 +73,7 @@ const Portfolio: React.FC = () => {
   const [isModalOpen, setModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [accountBalance, setAccountBalance] = useState(0);
+  const [holdingsValue, setHoldingsValue] = useState(0);
 
   // Require authentication - redirect to login if no user
   useEffect(() => {
@@ -126,7 +127,8 @@ const Portfolio: React.FC = () => {
     const fetchAccount = async () => {
       try {
         const account = await getUserAccount(userId);
-        setAccountBalance(account.balance);
+        setAccountBalance(account.account_balance);
+        setHoldingsValue(account.balance);
       } catch (error) {
         console.error('Failed to load account:', error);
       }
@@ -162,16 +164,14 @@ const Portfolio: React.FC = () => {
       setHoldings(transformedHoldings);
 
       const account = await getUserAccount(userId);
-      setAccountBalance(account.balance);
+      setAccountBalance(account.account_balance);
+      setHoldingsValue(account.balance);
     } catch (error) {
       console.error('Failed to refresh holdings:', error);
     }
   };
 
-  const holdingsValue = useMemo(
-    () => holdings.reduce((sum, holding) => sum + holding.value, 0),
-    [holdings]
-  );
+  // portfolioValue is calculated from backend holdingsValue + accountBalance
   const portfolioValue = useMemo(
     () => holdingsValue + accountBalance,
     [holdingsValue, accountBalance]
@@ -224,7 +224,7 @@ const Portfolio: React.FC = () => {
         ) : (
           <>
             <BalanceSection
-              totalValue={portfolioValue}
+              totalValue={holdingsValue}
               growthPercent={portfolioGrowth}
               holdingsCount={holdings.length}
               totalShares={totalShares}
