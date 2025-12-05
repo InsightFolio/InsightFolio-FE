@@ -54,16 +54,74 @@ const BalanceSection: React.FC<BalanceSectionProps> = ({
 
   const getXAxisTicks = () => {
     if (performance.length === 0) return [];
+    if (performance.length === 1) return [performance[0].label];
     
     const len = performance.length;
-    const indices: Record<TimeFilter, number[]> = {
-      '3D': [0, -1],
-      '1W': [0, Math.floor(len / 2), -1],
-      '1M': [0, Math.floor(len / 3), Math.floor(len * 2 / 3), -1],
-      'YTD': [0, Math.floor(len / 4), Math.floor(len / 2), Math.floor(len * 3 / 4), -1]
-    };
+    let indices: number[] = [];
     
-    return indices[activeFilter].map(i => performance[i < 0 ? len + i : i].label);
+    // Adjust tick selection based on data length
+    if (len === 2) {
+      indices = [0, 1];
+    } else if (len <= 4) {
+      indices = [0, len - 1];
+    } else if (len <= 7) {
+      // For small datasets, show first, middle, and last
+      indices = [0, Math.floor(len / 2), len - 1];
+    } else {
+      // For larger datasets, use filter-based logic
+      const indexMap = {
+        '3D': [0, len - 1],
+        '1W': [0, Math.floor(len / 2), len - 1],
+        '1M': [0, Math.floor(len / 3), Math.floor(len * 2 / 3), len - 1],
+        'YTD': [0, Math.floor(len / 4), Math.floor(len / 2), Math.floor(len * 3 / 4), len - 1]
+      };
+      indices = indexMap[activeFilter];
+    }
+    
+    // Remove duplicates and sort
+    const uniqueIndices = Array.from(new Set(indices)).sort((a, b) => a - b);
+    return uniqueIndices.map(i => performance[i].label);
+  };
+
+  const getYAxisDomain = (): [number, number] => {
+    if (performance.length === 0) return [0, 10000];
+    
+    const values = performance.map(p => p.value);
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const padding = (max - min) * 0.1;
+    
+    return [Math.max(0, min - padding), max + padding];
+  };
+
+  const getYAxisTicks = () => {
+    if (performance.length === 0) return undefined;
+    
+    const [min, max] = getYAxisDomain();
+    const range = max - min;
+    const step = range / 4; // Create 5 ticks
+    
+    const ticks: number[] = [];
+    for (let i = 0; i <= 4; i++) {
+      ticks.push(min + (step * i));
+    }
+    
+    // Check for duplicate formatted values
+    const decimals = activeFilter === '3D' || activeFilter === '1W' ? 2 : 1;
+    const formatted = new Set<string>();
+    const uniqueTicks: number[] = [];
+    
+    for (const tick of ticks) {
+      const kValue = tick / 1000;
+      const label = `$${kValue.toFixed(decimals)}k`;
+      
+      if (!formatted.has(label)) {
+        formatted.add(label);
+        uniqueTicks.push(tick);
+      }
+    }
+    
+    return uniqueTicks.length >= 3 ? uniqueTicks : undefined;
   };
 
   const graphColor = growthPercent >= 0 ? '#206f27' : '#d64545';
@@ -123,7 +181,8 @@ const BalanceSection: React.FC<BalanceSectionProps> = ({
                 tick={{ fill: 'rgba(33, 34, 39, 0.65)', fontWeight: 600 }}
                 axisLine={{ stroke: 'rgba(33, 34, 39, 0.2)' }}
                 tickLine={false}
-                ticks={getXAxisTicks()}
+                interval="preserveStartEnd"
+                minTickGap={30}
               />
               <YAxis
                 tick={{ fill: 'rgba(33, 34, 39, 0.65)', fontWeight: 600 }}

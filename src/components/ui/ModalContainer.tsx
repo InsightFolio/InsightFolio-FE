@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import './ModalContainer.css';
 import StockListView from '../layout/StockListView';
 import type { StockCardProps } from '../layout/StockCard';
@@ -12,6 +13,8 @@ type ModalContainerProps = {
   onSelectStock?: (stock: StockCardProps) => void;
 };
 
+const RESULTS_PER_PAGE = 10;
+
 const ModalContainer: React.FC<ModalContainerProps> = ({
   title,
   isOpen,
@@ -20,6 +23,23 @@ const ModalContainer: React.FC<ModalContainerProps> = ({
   stocks = [],
   onSelectStock
 }) => {
+  const [currentPage, setCurrentPage] = useState(0);
+
+  // Reset page when stocks change
+  React.useEffect(() => {
+    setCurrentPage(0);
+  }, [stocks]);
+
+  // Paginated results
+  const paginatedStocks = useMemo(() => {
+    const start = currentPage * RESULTS_PER_PAGE;
+    return stocks.slice(start, start + RESULTS_PER_PAGE);
+  }, [stocks, currentPage]);
+
+  const totalPages = Math.ceil(stocks.length / RESULTS_PER_PAGE);
+  const startIndex = currentPage * RESULTS_PER_PAGE + 1;
+  const endIndex = Math.min((currentPage + 1) * RESULTS_PER_PAGE, stocks.length);
+
   if (!isOpen) {
     return null;
   }
@@ -38,7 +58,36 @@ const ModalContainer: React.FC<ModalContainerProps> = ({
         <h2 className="modal__title">{title}</h2>
         {children}
         {stocks.length > 0 ? (
-          <StockListView stocks={stocks} onSelectStock={onSelectStock} />
+          <>
+            <StockListView stocks={paginatedStocks} onSelectStock={onSelectStock} />
+            
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="modal__pagination">
+                <span className="modal__pagination-info">
+                  Showing {startIndex}-{endIndex} of {stocks.length}
+                </span>
+                <div className="modal__pagination-controls">
+                  <button
+                    className="modal__pagination-btn"
+                    onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
+                    disabled={currentPage === 0}
+                  >
+                    <ChevronLeft size={18} />
+                    Previous
+                  </button>
+                  <button
+                    className="modal__pagination-btn"
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages - 1, prev + 1))}
+                    disabled={currentPage === totalPages - 1}
+                  >
+                    Next
+                    <ChevronRight size={18} />
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
         ) : (
           <p style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>
             No results found. Try a different search.

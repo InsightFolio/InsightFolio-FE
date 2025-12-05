@@ -51,6 +51,7 @@
 
 .dashboard__search {
   flex: 1;
+  position: relative;
   background-color: #ffffff;
   border-radius: 12px;
   border: none;
