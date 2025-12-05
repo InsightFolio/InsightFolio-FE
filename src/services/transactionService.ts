@@ -136,3 +136,17 @@ export const getStockBySymbol = async (symbol: string): Promise<any> => {
     throw error;
   }
 };
+
+/**
+ * Get portfolio historical performance data based on actual holdings and stock prices
+ */
+export const getPortfolioHistory = async (userId: number): Promise<{ date: string; value: number }[]> => {
+  try {
+    const response = await apiClient.get(`/portfolio/history/${userId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Failed to fetch portfolio history:', error);
+    return [];
+  }
+};
+
