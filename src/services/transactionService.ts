@@ -109,16 +109,16 @@ export const getUserHoldings = async (userId: number): Promise<Holding[]> => {
 /**
  * Get user's account balance
  */
-export const getUserAccount = async (userId: number): Promise<{ balance: number }> => {
+export const getUserAccount = async (userId: number): Promise<{ balance: number; account_balance: number }> => {
   try {
     const response = await apiClient.get(`/account/${userId}`);
     return response.data;
   } catch (error: any) {
     console.error('Failed to fetch account:', error);
-    // If account doesn't exist (404), return default balance of 0
+    // If account doesn't exist (404), return default balances
     if (error.response?.status === 404) {
-      console.warn(`Account not found for user ${userId}, returning default balance of 0`);
-      return { balance: 0 };
+      console.warn(`Account not found for user ${userId}, returning default balances`);
+      return { balance: 0, account_balance: 0 };
     }
     throw error;
   }
@@ -136,3 +136,17 @@ export const getStockBySymbol = async (symbol: string): Promise<any> => {
     throw error;
   }
 };
+
+/**
+ * Get portfolio historical performance data based on actual holdings and stock prices
+ */
+export const getPortfolioHistory = async (userId: number): Promise<{ date: string; value: number }[]> => {
+  try {
+    const response = await apiClient.get(`/portfolio/history/${userId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Failed to fetch portfolio history:', error);
+    return [];
+  }
+};
+

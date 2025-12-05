@@ -1,11 +1,41 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import TopNav from '../../components/layout/TopNav';
-import BalanceSection, { PerformancePoint } from '../../components/portfolio/BalanceSection';
+import BalanceSection, { PerformancePoint, TimeFilter } from '../../components/portfolio/BalanceSection';
 import HoldingsSection, { Holding } from '../../components/portfolio/HoldingsSection';
 import HoldingDetailModal from '../../components/portfolio/HoldingDetailModal';
-import { getUserHoldings, processTransaction, getUserAccount } from '../../services/transactionService';
+import { getUserHoldings, processTransaction, getUserAccount, getPortfolioHistory } from '../../services/transactionService';
 import { useAuth } from '../../contexts/AuthContext';
 import './Portfolio.css';
+
+// Filter historical data based on time range
+const filterHistoricalData = (data: PerformancePoint[], filter: TimeFilter): PerformancePoint[] => {
+  if (data.length === 0) return data;
+  
+  const now = new Date();
+  let cutoffDate: Date;
+  
+  switch (filter) {
+    case '3D':
+      cutoffDate = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
+      break;
+    case '1W':
+      cutoffDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      break;
+    case '1M':
+      cutoffDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      break;
+    case 'YTD':
+      cutoffDate = new Date(now.getFullYear(), 0, 1); // January 1st of current year
+      break;
+    default:
+      return data;
+  }
+  
+  // Filter data points that are after the cutoff date
+  // Since labels are formatted like "Jan 15", we need to work backwards from the end
+  const daysToShow = filter === '3D' ? 3 : filter === '1W' ? 7 : filter === '1M' ? 30 : data.length;
+  return data.slice(-daysToShow);
+};
 
 const portfolioPerformance: PerformancePoint[] = [
   { label: 'Jan', value: 51000 },
@@ -73,6 +103,9 @@ const Portfolio: React.FC = () => {
   const [isModalOpen, setModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [accountBalance, setAccountBalance] = useState(0);
+  const [holdingsValue, setHoldingsValue] = useState(0);
+  const [portfolioHistory, setPortfolioHistory] = useState<PerformancePoint[]>([]);
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>('YTD');
 
   // Require authentication - redirect to login if no user
   useEffect(() => {
@@ -126,14 +159,30 @@ const Portfolio: React.FC = () => {
     const fetchAccount = async () => {
       try {
         const account = await getUserAccount(userId);
-        setAccountBalance(account.balance);
+        setAccountBalance(account.account_balance);
+        setHoldingsValue(account.balance);
       } catch (error) {
         console.error('Failed to load account:', error);
       }
     };
 
+    const fetchHistory = async () => {
+      try {
+        const history = await getPortfolioHistory(userId);
+        // Transform backend date/value format to label/value for chart
+        const chartData: PerformancePoint[] = history.map((point) => ({
+          label: new Date(point.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          value: point.value
+        }));
+        setPortfolioHistory(chartData);
+      } catch (error) {
+        console.error('Failed to load portfolio history:', error);
+      }
+    };
+
     fetchHoldings();
     fetchAccount();
+    fetchHistory();
   }, [user, userId]);
 
   const refreshHoldings = async () => {
@@ -162,28 +211,53 @@ const Portfolio: React.FC = () => {
       setHoldings(transformedHoldings);
 
       const account = await getUserAccount(userId);
-      setAccountBalance(account.balance);
+      setAccountBalance(account.account_balance);
+      setHoldingsValue(account.balance);
+
+      // Refresh portfolio history graph
+      const history = await getPortfolioHistory(userId);
+      const chartData: PerformancePoint[] = history.map((point) => ({
+        label: new Date(point.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        value: point.value
+      }));
+      setPortfolioHistory(chartData);
     } catch (error) {
       console.error('Failed to refresh holdings:', error);
     }
   };
 
-  const holdingsValue = useMemo(
-    () => holdings.reduce((sum, holding) => sum + holding.value, 0),
-    [holdings]
-  );
+  // portfolioValue is calculated from backend holdingsValue + accountBalance
   const portfolioValue = useMemo(
     () => holdingsValue + accountBalance,
     [holdingsValue, accountBalance]
   );
   const totalShares = useMemo(() => holdings.reduce((sum, h) => sum + h.shares, 0), [holdings]);
   
-  // Calculate portfolio growth based on holdings
+  // Filter performance data based on selected time filter
+  const filteredPerformance = useMemo(
+    () => filterHistoricalData(portfolioHistory, timeFilter),
+    [portfolioHistory, timeFilter]
+  );
+  
+  // Calculate portfolio growth based on filtered time range
   const portfolioGrowth = useMemo(() => {
-    if (holdings.length === 0) return 0;
-    const totalGrowth = holdings.reduce((sum, h) => sum + (h.growthPercent * h.value), 0);
-    return holdingsValue > 0 ? totalGrowth / holdingsValue : 0;
-  }, [holdings, holdingsValue]);
+    if (filteredPerformance.length < 2) return 0;
+    
+    const startValue = filteredPerformance[0].value;
+    const endValue = filteredPerformance[filteredPerformance.length - 1].value;
+    
+    if (startValue === 0) return 0;
+    return ((endValue - startValue) / startValue) * 100;
+  }, [filteredPerformance]);
+  
+  // Calculate individual holding growth based on filtered time range
+  const holdingsWithFilteredGrowth = useMemo(() => {
+    return holdings.map(holding => {
+      // For now, use the same growth percentage from purchase price
+      // In the future, this could be enhanced to calculate growth from the filter start date
+      return holding;
+    });
+  }, [holdings]);
 
   const modalChartData = useMemo<PerformancePoint[]>(() => {
     if (!selectedHolding) return [];
@@ -224,15 +298,16 @@ const Portfolio: React.FC = () => {
         ) : (
           <>
             <BalanceSection
-              totalValue={portfolioValue}
+              totalValue={holdingsValue}
               growthPercent={portfolioGrowth}
               holdingsCount={holdings.length}
               totalShares={totalShares}
               accountBalance={accountBalance}
-              performance={portfolioPerformance}
+              performance={filteredPerformance}
+              onTimeFilterChange={setTimeFilter}
             />
 
-            <HoldingsSection holdings={holdings} onSelect={handleSelectHolding} />
+            <HoldingsSection holdings={holdingsWithFilteredGrowth} onSelect={handleSelectHolding} />
           </>
         )}
       </main>
