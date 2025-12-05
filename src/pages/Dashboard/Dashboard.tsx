@@ -11,6 +11,7 @@ import type { PerformancePoint } from '../../components/portfolio/BalanceSection
 import axios from 'axios';
 import { processTransaction, getStockBySymbol } from '../../services/transactionService';
 import { useAuth } from '../../contexts/AuthContext';
+import { generatePerformanceData } from '../../utils/chartHelpers';
 import './Dashboard.css';
 
 type Stock = StockCardProps;
@@ -50,60 +51,6 @@ const Dashboard: React.FC = () => {
   
   const userId = user?.id || 0;
 
-  const stockPerformance: Record<string, PerformancePoint[]> = useMemo(
-    () => ({
-      AAPL: [
-        { label: 'Jan', value: 7800 },
-        { label: 'Feb', value: 8120 },
-        { label: 'Mar', value: 7950 },
-        { label: 'Apr', value: 8280 },
-        { label: 'May', value: 8475 },
-        { label: 'Jun', value: 8620 },
-        { label: 'Jul', value: 8790 },
-        { label: 'Aug', value: 8970 }
-      ],
-      MSFT: [
-        { label: 'Jan', value: 12800 },
-        { label: 'Feb', value: 13250 },
-        { label: 'Mar', value: 13100 },
-        { label: 'Apr', value: 13680 },
-        { label: 'May', value: 13820 },
-        { label: 'Jun', value: 14040 },
-        { label: 'Jul', value: 14300 },
-        { label: 'Aug', value: 14450 }
-      ],
-      NVDA: [
-        { label: 'Jan', value: 14200 },
-        { label: 'Feb', value: 14950 },
-        { label: 'Mar', value: 15120 },
-        { label: 'Apr', value: 15480 },
-        { label: 'May', value: 15810 },
-        { label: 'Jun', value: 16150 },
-        { label: 'Jul', value: 16580 },
-        { label: 'Aug', value: 16840 }
-      ],
-      AMZN: [
-        { label: 'Jan', value: 7120 },
-        { label: 'Feb', value: 7280 },
-        { label: 'Mar', value: 7220 },
-        { label: 'Apr', value: 7440 },
-        { label: 'May', value: 7560 },
-        { label: 'Jun', value: 7690 },
-        { label: 'Jul', value: 7780 },
-        { label: 'Aug', value: 7850 }
-      ]
-    }),
-    []
-  );
-
-  const fallbackPerformance = (value: number): PerformancePoint[] => {
-    const base = value * 0.9;
-    return ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'].map((label, idx) => ({
-      label,
-      value: Math.round(base + (value - base) * (idx / 5))
-    }));
-  };
-
   const holdingFromStock = (stock: Stock): Holding => ({
     symbol: stock.symbol,
     company: stock.company,
@@ -114,8 +61,8 @@ const Dashboard: React.FC = () => {
 
   const modalChartData = useMemo<PerformancePoint[]>(() => {
     if (!selectedStock) return [];
-    return stockPerformance[selectedStock.symbol] || fallbackPerformance(selectedStock.price);
-  }, [selectedStock, stockPerformance]);
+    return generatePerformanceData(selectedStock.price, selectedStock.changePercent);
+  }, [selectedStock]);
 
   useEffect(() => {
     const fetchPopular = async () => {

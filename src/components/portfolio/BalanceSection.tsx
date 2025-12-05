@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Area,
   AreaChart,
@@ -8,6 +8,13 @@ import {
   XAxis,
   YAxis
 } from 'recharts';
+import { 
+  FILTER_LABELS, 
+  TIME_FILTERS, 
+  getYAxisDomain, 
+  getYAxisTicks, 
+  formatYAxisTick 
+} from '../../utils/chartHelpers';
 
 export type PerformancePoint = {
   label: string;
@@ -42,12 +49,8 @@ const BalanceSection: React.FC<BalanceSectionProps> = ({
     onTimeFilterChange?.(filter);
   };
 
-  const filterLabels: Record<TimeFilter, string> = {
-    '3D': 'Past 3 days',
-    '1W': 'Past week',
-    '1M': 'Past month',
-    'YTD': 'Year to date'
-  };
+  const yAxisDomain = useMemo(() => getYAxisDomain(performance), [performance]);
+  const yAxisTicks = useMemo(() => getYAxisTicks(performance, yAxisDomain, activeFilter), [performance, yAxisDomain, activeFilter]);
 
   const getXAxisTicks = () => {
     if (performance.length === 0) return [];
@@ -150,32 +153,17 @@ const BalanceSection: React.FC<BalanceSectionProps> = ({
           <h3>Balance over time</h3>
           <div className="portfolio__chart-controls">
             <div className="portfolio__time-filters">
-              <button
-                className={`portfolio__time-filter ${activeFilter === '3D' ? 'portfolio__time-filter--active' : ''}`}
-                onClick={() => handleFilterClick('3D')}
-              >
-                3D
-              </button>
-              <button
-                className={`portfolio__time-filter ${activeFilter === '1W' ? 'portfolio__time-filter--active' : ''}`}
-                onClick={() => handleFilterClick('1W')}
-              >
-                1W
-              </button>
-              <button
-                className={`portfolio__time-filter ${activeFilter === '1M' ? 'portfolio__time-filter--active' : ''}`}
-                onClick={() => handleFilterClick('1M')}
-              >
-                1M
-              </button>
-              <button
-                className={`portfolio__time-filter ${activeFilter === 'YTD' ? 'portfolio__time-filter--active' : ''}`}
-                onClick={() => handleFilterClick('YTD')}
-              >
-                YTD
-              </button>
+              {TIME_FILTERS.map(filter => (
+                <button
+                  key={filter}
+                  className={`portfolio__time-filter ${activeFilter === filter ? 'portfolio__time-filter--active' : ''}`}
+                  onClick={() => handleFilterClick(filter)}
+                >
+                  {filter}
+                </button>
+              ))}
             </div>
-            <span className="portfolio__label portfolio__label--muted">{filterLabels[activeFilter]}</span>
+            <span className="portfolio__label portfolio__label--muted">{FILTER_LABELS[activeFilter]}</span>
           </div>
         </div>
         <div className="portfolio__chart-wrapper">
@@ -200,16 +188,9 @@ const BalanceSection: React.FC<BalanceSectionProps> = ({
                 tick={{ fill: 'rgba(33, 34, 39, 0.65)', fontWeight: 600 }}
                 axisLine={{ stroke: 'rgba(33, 34, 39, 0.2)' }}
                 tickLine={false}
-                tickFormatter={(value: number) => {
-                  const decimals = activeFilter === '3D' || activeFilter === '1W' ? 2 : 1;
-                  if (value >= 1000) {
-                    const kValue = value / 1000;
-                    return `$${kValue.toFixed(decimals)}k`;
-                  }
-                  return `$${value.toFixed(0)}`;
-                }}
-                domain={getYAxisDomain()}
-                ticks={getYAxisTicks()}
+                tickFormatter={(value: number) => formatYAxisTick(value, activeFilter)}
+                domain={yAxisDomain}
+                ticks={yAxisTicks}
                 scale="linear"
               />
               <Tooltip

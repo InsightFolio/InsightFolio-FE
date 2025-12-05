@@ -5,6 +5,7 @@ import HoldingsSection, { Holding } from '../../components/portfolio/HoldingsSec
 import HoldingDetailModal from '../../components/portfolio/HoldingDetailModal';
 import { getUserHoldings, processTransaction, getUserAccount, getPortfolioHistory } from '../../services/transactionService';
 import { useAuth } from '../../contexts/AuthContext';
+import { generatePerformanceData } from '../../utils/chartHelpers';
 import './Portfolio.css';
 
 // Filter historical data based on time range
@@ -338,7 +339,15 @@ const Portfolio: React.FC = () => {
 
   const modalChartData = useMemo<PerformancePoint[]>(() => {
     if (!selectedHolding) return [];
-    return holdingPerformance[selectedHolding.symbol] || [];
+    
+    // Check if we have hardcoded performance data
+    const hardcodedData = holdingPerformance[selectedHolding.symbol];
+    if (hardcodedData && hardcodedData.length > 0) {
+      return hardcodedData;
+    }
+    
+    // Generate fallback performance data using helper
+    return generatePerformanceData(selectedHolding.value, selectedHolding.growthPercent);
   }, [selectedHolding]);
 
   const handleSelectHolding = (holding: Holding) => {

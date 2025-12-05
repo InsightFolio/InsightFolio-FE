@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Area,
   AreaChart,
@@ -9,7 +9,16 @@ import {
   YAxis
 } from 'recharts';
 import { Holding } from './HoldingsSection';
-import type { PerformancePoint } from './BalanceSection';
+import type { PerformancePoint, TimeFilter } from './BalanceSection';
+import { 
+  FILTER_LABELS, 
+  TIME_FILTERS, 
+  getYAxisDomain, 
+  getYAxisTicks, 
+  formatYAxisTick,
+  getGraphColor,
+  filterDataByTimeRange
+} from '../../utils/chartHelpers';
 import './HoldingDetailModal.css';
 
 type HoldingDetailModalProps = {
@@ -38,6 +47,12 @@ const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({
   const [quantity, setQuantity] = useState<number>(1);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [activeFilter, setActiveFilter] = useState<TimeFilter>('YTD');
+
+  const filteredData = useMemo(() => filterDataByTimeRange(data, activeFilter), [data, activeFilter]);
+  const graphColor = useMemo(() => getGraphColor(filteredData), [filteredData]);
+  const yAxisDomain = useMemo(() => getYAxisDomain(filteredData), [filteredData]);
+  const yAxisTicks = useMemo(() => getYAxisTicks(filteredData, yAxisDomain, activeFilter), [filteredData, yAxisDomain, activeFilter]);
 
   if (!isOpen || !holding) {
     return null;
@@ -45,7 +60,10 @@ const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({
 
   const price = currentPrice || holding.value / (holding.shares || 1);
   const totalCost = price * quantity;
-  const amountHeld = holding.value;
+  // Amount held = total value of shares user owns (shares × current price)
+  // For holdings: this is holding.value
+  // For non-holdings (Dashboard): shares is 0, so show 0
+  const amountHeld = isInHoldings ? holding.value : (holding.shares > 0 ? holding.value : 0);
 
   const handleBuy = async () => {
     if (!onBuy || quantity <= 0 || !stockId) return;
@@ -197,44 +215,67 @@ const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({
             </div>
           </div>
 
-          <div className="portfolio__modal-chart">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
-                <defs>
-                  <linearGradient id="holdingArea" x1="0" x2="0" y1="0" y2="1">
-                    <stop offset="0%" stopColor="#206f27" stopOpacity={0.35} />
-                    <stop offset="100%" stopColor="#206f27" stopOpacity={0.06} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(33, 34, 39, 0.12)" />
-                <XAxis
-                  dataKey="label"
-                  tick={{ fill: 'rgba(33, 34, 39, 0.65)', fontWeight: 600, fontSize: 12 }}
-                  axisLine={{ stroke: 'rgba(33, 34, 39, 0.2)' }}
-                  tickLine={false}
-                />
-                <YAxis
-                  tick={{ fill: 'rgba(33, 34, 39, 0.65)', fontWeight: 600, fontSize: 12 }}
-                  axisLine={{ stroke: 'rgba(33, 34, 39, 0.2)' }}
-                  tickLine={false}
-                  tickFormatter={(value: number) => `$${(value / 1000).toFixed(0)}k`}
-                />
-                <Tooltip
-                  formatter={(val: number) => `$${val.toLocaleString()}`}
-                  labelFormatter={(label) => `Month: ${label}`}
-                  contentStyle={{ borderRadius: 12, border: '1px solid rgba(33, 34, 39, 0.12)' }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="value"
-                  stroke="#206f27"
-                  fill="url(#holdingArea)"
-                  strokeWidth={3}
-                  dot={{ fill: '#206f27', stroke: '#ffffff', strokeWidth: 2, r: 4 }}
-                  activeDot={{ r: 6, stroke: '#ffffff', strokeWidth: 2 }}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+          <div className="portfolio__modal-chart-section">
+            <div className="portfolio__chart-header">
+              <h3>Performance over time</h3>
+              <div className="portfolio__chart-controls">
+                <div className="portfolio__time-filters">
+                  {TIME_FILTERS.map(filter => (
+                    <button
+                      key={filter}
+                      className={`portfolio__time-filter ${activeFilter === filter ? 'portfolio__time-filter--active' : ''}`}
+                      onClick={() => setActiveFilter(filter)}
+                    >
+                      {filter}
+                    </button>
+                  ))}
+                </div>
+                <span className="portfolio__label portfolio__label--muted">{FILTER_LABELS[activeFilter]}</span>
+              </div>
+            </div>
+            <div className="portfolio__modal-chart">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={filteredData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
+                  <defs>
+                    <linearGradient id="holdingArea" x1="0" x2="0" y1="0" y2="1">
+                      <stop offset="0%" stopColor={graphColor} stopOpacity={0.35} />
+                      <stop offset="100%" stopColor={graphColor} stopOpacity={0.06} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(33, 34, 39, 0.12)" />
+                  <XAxis
+                    dataKey="label"
+                    tick={{ fill: 'rgba(33, 34, 39, 0.65)', fontWeight: 600, fontSize: 12 }}
+                    axisLine={{ stroke: 'rgba(33, 34, 39, 0.2)' }}
+                    tickLine={false}
+                    interval="preserveStartEnd"
+                    minTickGap={30}
+                  />
+                  <YAxis
+                    tick={{ fill: 'rgba(33, 34, 39, 0.65)', fontWeight: 600, fontSize: 12 }}
+                    axisLine={{ stroke: 'rgba(33, 34, 39, 0.2)' }}
+                    tickLine={false}
+                    tickFormatter={(value: number) => formatYAxisTick(value, activeFilter)}
+                    domain={yAxisDomain}
+                    ticks={yAxisTicks}
+                    scale="linear"
+                  />
+                  <Tooltip
+                    formatter={(val: number) => `$${val.toLocaleString()}`}
+                    labelFormatter={(label) => `Date: ${label}`}
+                    contentStyle={{ borderRadius: 12, border: '1px solid rgba(33, 34, 39, 0.12)' }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="value"
+                    stroke={graphColor}
+                    fill="url(#holdingArea)"
+                    strokeWidth={3}
+                    activeDot={{ r: 6, stroke: '#ffffff', strokeWidth: 2 }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </div>
       </div>
