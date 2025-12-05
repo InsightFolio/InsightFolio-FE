@@ -83,47 +83,6 @@ const BalanceSection: React.FC<BalanceSectionProps> = ({
     return uniqueIndices.map(i => performance[i].label);
   };
 
-  const getYAxisDomain = (): [number, number] => {
-    if (performance.length === 0) return [0, 10000];
-    
-    const values = performance.map(p => p.value);
-    const min = Math.min(...values);
-    const max = Math.max(...values);
-    const padding = (max - min) * 0.1;
-    
-    return [Math.max(0, min - padding), max + padding];
-  };
-
-  const getYAxisTicks = () => {
-    if (performance.length === 0) return undefined;
-    
-    const [min, max] = getYAxisDomain();
-    const range = max - min;
-    const step = range / 4; // Create 5 ticks
-    
-    const ticks: number[] = [];
-    for (let i = 0; i <= 4; i++) {
-      ticks.push(min + (step * i));
-    }
-    
-    // Check for duplicate formatted values
-    const decimals = activeFilter === '3D' || activeFilter === '1W' ? 2 : 1;
-    const formatted = new Set<string>();
-    const uniqueTicks: number[] = [];
-    
-    for (const tick of ticks) {
-      const kValue = tick / 1000;
-      const label = `$${kValue.toFixed(decimals)}k`;
-      
-      if (!formatted.has(label)) {
-        formatted.add(label);
-        uniqueTicks.push(tick);
-      }
-    }
-    
-    return uniqueTicks.length >= 3 ? uniqueTicks : undefined;
-  };
-
   const graphColor = growthPercent >= 0 ? '#206f27' : '#d64545';
 
   return (
