@@ -1,0 +1,27 @@
+.styled-button {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 14px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  background-color: transparent;
+  color: #206f27;
+  text-decoration: none;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.styled-button:hover,
+.styled-button:focus-visible {
+  background-color: rgba(33, 34, 39, 0.1);
+  outline: none;
+}
+
+.styled-button--active {
+  background-color: #206f27;
+  color: #ffffff;
+}
+
+.styled-button--active:hover {
+  background-color: #1c5f22;
+}

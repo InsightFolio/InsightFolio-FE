@@ -2,7 +2,7 @@ import { useForm } from 'react-hook-form';
 import TextField from '../../components/form/TextField';
 import PrimaryButton from '../../components/form/PrimaryButton';
 import styles from './SignUpForm.module.css';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 type SignUpValues = {
@@ -20,16 +20,19 @@ const SignUpForm = () => {
     formState: { errors, isSubmitting },
   } = useForm<SignUpValues>();
 
+  const navigate = useNavigate();
+
   const onSubmit = async (values: SignUpValues) => {
     try {
       
-      const response = await axios.post('http://127.0.0.1:5000/signup', {
+      const response = await axios.post('http://127.0.0.1:5001/signup', {
         username: values.username || '',
         email: values.email,
         password: values.password
       })
 
       console.log('Signup success:', response.data);
+      navigate('/login');
 
     } catch (error) {
       console.error('Signup failed:', error)

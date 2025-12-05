@@ -3,28 +3,26 @@ import { StockCardProps } from './StockCard';
 
 type StockListViewProps = {
   stocks: StockCardProps[];
+  onSelectStock?: (stock: StockCardProps) => void;
 };
 
-const StockListView: React.FC<StockListViewProps> = ({ stocks }) => (
+const StockListView: React.FC<StockListViewProps> = ({ stocks, onSelectStock }) => (
   <div className="stock-list" role="table">
     <div className="stock-list__row stock-list__row--header" role="row">
       <span role="columnheader">Symbol</span>
       <span role="columnheader">Company</span>
       <span role="columnheader">Price</span>
-      <span role="columnheader" className="stock-list__cell--change-header">
-        Change
-      </span>
+      <span role="columnheader">Sector</span>
+      <span role="columnheader">Sub-Sector</span>
     </div>
     {stocks.map((stock) => {
-      const isPositive = stock.change >= 0;
-      const sign = isPositive ? '+' : '';
-
       return (
         <button
           key={stock.symbol}
           type="button"
           className="stock-list__row"
           role="row"
+          onClick={() => onSelectStock?.(stock)}
         >
           <span role="cell" className="stock-list__cell stock-list__cell--symbol">
             {stock.symbol}
@@ -35,13 +33,11 @@ const StockListView: React.FC<StockListViewProps> = ({ stocks }) => (
           <span role="cell" className="stock-list__cell stock-list__cell--price">
             ${stock.price.toFixed(2)}
           </span>
-          <span
-            role="cell"
-            className={`stock-list__cell stock-list__cell--change ${
-              isPositive ? 'stock-list__change--up' : 'stock-list__change--down'
-            }`}
-          >
-            {`${sign}${stock.change.toFixed(2)} (${sign}${stock.changePercent.toFixed(2)}%)`}
+          <span role="cell" className="stock-list__cell stock-list__cell--sector">
+            {stock.sector}
+          </span>
+          <span role="cell" className="stock-list__cell stock-list__cell--sub-sector">
+            {stock.sub_sector}
           </span>
         </button>
       );

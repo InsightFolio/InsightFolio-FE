@@ -1,0 +1,245 @@
+import React, { useState } from 'react';
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis
+} from 'recharts';
+import { Holding } from './HoldingsSection';
+import type { PerformancePoint } from './BalanceSection';
+import './HoldingDetailModal.css';
+
+type HoldingDetailModalProps = {
+  holding: Holding | null;
+  data: PerformancePoint[];
+  isOpen: boolean;
+  onClose: () => void;
+  onBuy?: (stockId: number, quantity: number) => Promise<void>;
+  onSell?: (stockId: number, quantity: number) => Promise<void>;
+  isInHoldings?: boolean;
+  currentPrice?: number;
+  stockId?: number;
+};
+
+const HoldingDetailModal: React.FC<HoldingDetailModalProps> = ({
+  holding,
+  data,
+  isOpen,
+  onClose,
+  onBuy,
+  onSell,
+  isInHoldings = false,
+  currentPrice,
+  stockId
+}) => {
+  const [quantity, setQuantity] = useState<number>(1);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  if (!isOpen || !holding) {
+    return null;
+  }
+
+  const price = currentPrice || holding.value / (holding.shares || 1);
+  const totalCost = price * quantity;
+  const amountHeld = holding.value;
+
+  const handleBuy = async () => {
+    if (!onBuy || quantity <= 0 || !stockId) return;
+    
+    setIsProcessing(true);
+    setError(null);
+    
+    try {
+      await onBuy(stockId, quantity);
+      setQuantity(1);
+      onClose();
+    } catch (err: any) {
+      setError(err.message || 'Failed to buy stock');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleSell = async () => {
+    if (!onSell || quantity <= 0 || !stockId) return;
+    
+    if (quantity > holding.shares) {
+      setError(`Cannot sell more than ${holding.shares} shares`);
+      return;
+    }
+    
+    setIsProcessing(true);
+    setError(null);
+    
+    try {
+      await onSell(stockId, quantity);
+      setQuantity(1);
+      onClose();
+    } catch (err: any) {
+      setError(err.message || 'Failed to sell stock');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  return (
+    <div className="portfolio-modal-overlay" role="dialog" aria-modal="true" aria-label="Holding details">
+      <div className="portfolio-modal">
+        <header className="portfolio-modal__header">
+          <div>
+            <h3 className="portfolio-modal__title">
+              {holding.company} ({holding.symbol})
+            </h3>
+          </div>
+          <button className="portfolio-modal__close" type="button" onClick={onClose} aria-label="Close">
+            ×
+          </button>
+        </header>
+
+        {error && (
+          <div className="portfolio-modal__error">
+            {error}
+          </div>
+        )}
+
+        {(onBuy || onSell) && (
+          <div className="portfolio-modal__transaction">
+            <div className="portfolio-modal__quantity-group">
+              <label className="portfolio-modal__label">Quantity</label>
+              <input
+                type="number"
+                min="1"
+                value={quantity}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value === '' || value === '0') {
+                    setQuantity(1);
+                  } else {
+                    setQuantity(parseInt(value) || 1);
+                  }
+                }}
+                className="portfolio-modal__quantity-input"
+                disabled={isProcessing}
+              />
+            </div>
+            <div className="portfolio-modal__transaction-info">
+              <span>Price per share: ${price.toFixed(2)}</span>
+              <span className="portfolio-modal__total">Total: ${totalCost.toFixed(2)}</span>
+            </div>
+            <div className="portfolio-modal__actions">
+              {onBuy && (
+                <button 
+                  type="button" 
+                  className="portfolio-modal__primary" 
+                  onClick={handleBuy}
+                  disabled={isProcessing || quantity <= 0}
+                >
+                  {isProcessing ? 'Processing...' : 'Buy'}
+                </button>
+              )}
+              {isInHoldings && onSell && (
+                <button 
+                  type="button" 
+                  className="portfolio-modal__danger" 
+                  onClick={handleSell}
+                  disabled={isProcessing || quantity <= 0}
+                >
+                  {isProcessing ? 'Processing...' : 'Sell'}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        <div className="portfolio__modal">
+          <div className="portfolio__modal-info">
+            <div>
+              <p className="portfolio__label">Amount held</p>
+              <p className="portfolio__modal-value">
+                ${(holding.value * holding.shares).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              </p>
+            </div>
+            <div>
+              <p className="portfolio__label">Shares</p>
+              {isInHoldings ? (
+                <p className="portfolio__modal-value">{holding.shares}</p>
+              ) : (
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  className="portfolio-modal__input"
+                  value={quantity}
+                  onChange={(e) => setQuantity(Number(e.target.value))}
+                />
+              )}
+            </div>
+            <div>
+              <p className="portfolio__label">{isInHoldings ? 'Growth' : 'Price per share'}</p>
+              {isInHoldings ? (
+                <p
+                  className={`portfolio__modal-badge ${
+                    holding.growthPercent >= 0 ? 'portfolio__modal-badge--up' : 'portfolio__modal-badge--down'
+                  }`}
+                >
+                  {holding.growthPercent >= 0 ? '+' : ''}
+                  {holding.growthPercent.toFixed(1)}%
+                </p>
+              ) : (
+                <p className="portfolio__modal-value">
+                  ${price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="portfolio__modal-chart">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
+                <defs>
+                  <linearGradient id="holdingArea" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0%" stopColor="#206f27" stopOpacity={0.35} />
+                    <stop offset="100%" stopColor="#206f27" stopOpacity={0.06} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(33, 34, 39, 0.12)" />
+                <XAxis
+                  dataKey="label"
+                  tick={{ fill: 'rgba(33, 34, 39, 0.65)', fontWeight: 600, fontSize: 12 }}
+                  axisLine={{ stroke: 'rgba(33, 34, 39, 0.2)' }}
+                  tickLine={false}
+                />
+                <YAxis
+                  tick={{ fill: 'rgba(33, 34, 39, 0.65)', fontWeight: 600, fontSize: 12 }}
+                  axisLine={{ stroke: 'rgba(33, 34, 39, 0.2)' }}
+                  tickLine={false}
+                  tickFormatter={(value: number) => `$${(value / 1000).toFixed(0)}k`}
+                />
+                <Tooltip
+                  formatter={(val: number) => `$${val.toLocaleString()}`}
+                  labelFormatter={(label) => `Month: ${label}`}
+                  contentStyle={{ borderRadius: 12, border: '1px solid rgba(33, 34, 39, 0.12)' }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="value"
+                  stroke="#206f27"
+                  fill="url(#holdingArea)"
+                  strokeWidth={3}
+                  dot={{ fill: '#206f27', stroke: '#ffffff', strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6, stroke: '#ffffff', strokeWidth: 2 }}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default HoldingDetailModal;

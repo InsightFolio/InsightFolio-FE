@@ -2,7 +2,8 @@ import { useForm } from 'react-hook-form';
 import TextField from '../../components/form/TextField';
 import PrimaryButton from '../../components/form/PrimaryButton';
 import styles from './LoginForm.module.css';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import axios from 'axios';
 
 type LoginValues = {
@@ -17,18 +18,40 @@ const LoginForm = () => {
     formState: { errors, isSubmitting },
   } = useForm<LoginValues>();
 
+  const navigate = useNavigate();
+  const { setUserData } = useAuth();
+
   const onSubmit = async (values: LoginValues) => {
     try {
-
-      const response = await axios.post('http://127.0.0.1:5000/login', {
+      const response = await axios.post('http://127.0.0.1:5001/login', {
         username: values.username || undefined,
         password: values.password
-      })
+      });
 
       console.log('Login success:', response.data);
-
+      
+      // Store JWT token
+      const token = response.data.token || response.data.access_token;
+      if (token) {
+        localStorage.setItem('token', token);
+      }
+      
+      // Update auth context with user data
+      if (response.data.user) {
+        const user = {
+          id: response.data.user.user_id,
+          email: response.data.user.email,
+          username: response.data.user.username
+        };
+        
+        // Update AuthContext state - this is crucial!
+        setUserData(user);
+      }
+      
+      // Navigate to dashboard
+      navigate('/dashboard');
     } catch (error) {
-      console.error('Login failed:', error)
+      console.error('Login failed:', error);
     }
   };
 
