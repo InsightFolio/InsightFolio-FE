@@ -59,7 +59,10 @@ const BalanceSection: React.FC<BalanceSectionProps> = ({
       'YTD': [0, Math.floor(performance.length / 4), Math.floor(performance.length / 2), Math.floor(performance.length * 3 / 4), -1]
     };
     
-    return indices[activeFilter].map(i => performance[i < 0 ? performance.length + i : i].label);
+    const tickIndices = indices[activeFilter].map(i => i < 0 ? performance.length + i : i);
+    const uniqueIndices = Array.from(new Set(tickIndices)).sort((a, b) => a - b);
+    
+    return uniqueIndices.map(i => performance[i].label);
   };
 
   const getYAxisDomain = (): [number, number] => {
