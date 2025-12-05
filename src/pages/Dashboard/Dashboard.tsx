@@ -159,17 +159,23 @@ const Dashboard: React.FC = () => {
     // Open the modal immediately
     setSearchModalOpen(true);
 
+    console.log('Search filters:', filters);
+
     try {
-      const response = await axios.post(`${API_BASE}/search`, {
+      const payload = {
         text: searchText,
         filters: {
-          country: filters.country.join(','),
-          min_price: filters.min_price,
-          max_price: filters.max_price,
-          sector: filters.sector.join(','),
-          sub_sector: filters.sub_sector.join(',')
+          country: filters.activeFilters.country ? filters.country.join(',') : '',
+          min_price: filters.activeFilters.price ? filters.min_price : 0,
+          max_price: filters.activeFilters.price ? filters.max_price : 0,
+          sector: filters.activeFilters.sector ? filters.sector.join(',') : '',
+          sub_sector: filters.activeFilters.subSector ? filters.sub_sector.join(',') : ''
         }
-      });
+      };
+
+      console.log('Search payload:', payload);
+
+      const response = await axios.post(`${API_BASE}/search`, payload);
 
       console.log('Search results:', response.data);
 
@@ -184,7 +190,33 @@ const Dashboard: React.FC = () => {
         changePercent: stock.changePercent ?? 0
       }));
 
-      setSearchResults(transformedResults);
+      // Filter results to only include stocks that match the search text
+      const searchLower = searchText.toLowerCase().trim();
+      const filteredResults = searchLower.length > 0 
+        ? transformedResults.filter(stock => 
+            stock.symbol.toLowerCase().includes(searchLower) ||
+            stock.company.toLowerCase().includes(searchLower)
+          )
+        : transformedResults;
+
+      // Sort results: prioritize stocks where symbol or company STARTS with search text
+      const sortedResults = filteredResults.sort((a, b) => {
+        const aSymbolStarts = a.symbol.toLowerCase().startsWith(searchLower);
+        const aCompanyStarts = a.company.toLowerCase().startsWith(searchLower);
+        const bSymbolStarts = b.symbol.toLowerCase().startsWith(searchLower);
+        const bCompanyStarts = b.company.toLowerCase().startsWith(searchLower);
+        
+        // Prioritize symbol starts over company starts
+        if (aSymbolStarts && !bSymbolStarts) return -1;
+        if (bSymbolStarts && !aSymbolStarts) return 1;
+        if (aCompanyStarts && !bCompanyStarts) return -1;
+        if (bCompanyStarts && !aCompanyStarts) return 1;
+        
+        // If both or neither start with search, sort alphabetically by symbol
+        return a.symbol.localeCompare(b.symbol);
+      });
+
+      setSearchResults(sortedResults);
     } catch (error) {
       console.error('Search failed:', error);
       setSearchResults([]); // Clear results on error

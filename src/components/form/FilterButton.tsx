@@ -1,5 +1,6 @@
-import { ButtonHTMLAttributes, useState } from "react";
+import { ButtonHTMLAttributes, useState, useMemo } from "react";
 import { SlidersHorizontal, ChevronDown } from "lucide-react";
+import Fuse from "fuse.js";
 import "./FilterButton.css";
 
 type FilterButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -19,11 +20,25 @@ export type FilterValues = {
   max_price: number;
   sector: string[];
   sub_sector: string[];
+  activeFilters: {
+    price: boolean;
+    country: boolean;
+    sector: boolean;
+    subSector: boolean;
+  };
 };
 
-const COUNTRIES = ["United States", "Canada", "France", "Netherlands"];
-const SECTORS = ["Technology", "Healthcare", "Financial Services", "Real Estate"];
-const SUB_SECTORS = ["Aerospace & Defense", "Biotechnology", "Asset Management", "Credit Services"];
+const COUNTRIES = ["Argentina", "Australia", "Belgium", "Bermuda", "Brazil", "Canada", "Cayman Islands", "Chile", "China", "Colombia", "Finland", "France", "Guernsey", "Hong Kong", "Ireland", "Luxembourg", "Mexico", "Netherlands", "Panama", "Peru", "Portugal", "Singapore", "Spain", "Sweden", "Switzerland", "Taiwan", "United Kingdom", "United States", "Uruguay"];
+
+const SECTORS = ["Basic Materials", "Communication Services", "Consumer Cyclical", "Consumer Defensive", "Energy", "Financial Services", "Healthcare", "Industrials", "Real Estate", "Technology", "Utilities"];
+
+const SUB_SECTORS = [
+  "Advertising Agencies", "Aerospace & Defense", "Agricultural Inputs", "Airlines", "Airports & Air Services", "Aluminum", "Apparel Manufacturing", "Apparel Retail", "Asset Management", "Auto & Truck Dealerships", "Auto Manufacturers", "Auto Parts", "Banks - Diversified", "Banks - Regional", "Beverages - Brewers", "Beverages - Non-Alcoholic", "Beverages - Wineries & Distilleries", "Biotechnology", "Broadcasting", "Building Materials", "Building Products & Equipment", "Business Equipment & Supplies", "Capital Markets", "Chemicals", "Coking Coal", "Communication Equipment", "Computer Hardware", "Confectioners", "Conglomerates",
+  "Consulting Services", "Consumer Electronics", "Copper", "Credit Services", "Department Stores", "Diagnostics & Research", "Discount Stores", "Drug Manufacturers - General", "Drug Manufacturers - Specialty & Generic", "Education & Training Services", "Electrical Equipment & Parts", "Electronic Components", "Electronic Gaming & Multimedia", "Electronics & Computer Distribution", "Engineering & Construction", "Entertainment", "Farm & Heavy Construction Machinery", "Farm Products", "Financial Conglomerates", "Financial Data & Stock Exchanges", "Food Distribution", "Footwear & Accessories", "Furnishings, Fixtures & Appliances", "Gambling", "Gold", "Grocery Stores", "Health Information Services", "Healthcare Plans", "Home Improvement Retail", "Household & Personal Products",
+  "Industrial Distribution", "Information Technology Services", "Infrastructure Operations", "Insurance - Diversified", "Insurance - Life", "Insurance - Property & Casualty", "Insurance - Reinsurance", "Insurance - Specialty", "Insurance Brokers", "Integrated Freight & Logistics", "Internet Content & Information", "Internet Retail", "Leisure", "Lodging", "Lumber & Wood Production", "Luxury Goods", "Marine Shipping", "Medical Care Facilities", "Medical Devices", "Medical Distribution", "Medical Instruments & Supplies", "Metal Fabrication", "Mortgage Finance", "Oil & Gas Drilling", "Oil & Gas E&P", "Oil & Gas Equipment & Services", "Oil & Gas Integrated", "Oil & Gas Midstream", "Oil & Gas Refining & Marketing", "Other Industrial Metals & Mining",
+  "Other Precious Metals & Mining", "Packaged Foods", "Packaging & Containers", "Paper & Paper Products", "Personal Services", "Pharmaceutical Retailers", "Pollution & Treatment Controls", "Publishing", "Railroads", "Real Estate - Development", "Real Estate - Diversified", "Real Estate Services", "Recreational Vehicles", "REIT - Diversified", "REIT - Healthcare Facilities", "REIT - Hotel & Motel", "REIT - Industrial", "REIT - Mortgage", "REIT - Office", "REIT - Residential", "REIT - Retail", "REIT - Specialty", "Rental & Leasing Services", "Residential Construction", "Resorts & Casinos", "Restaurants", "Scientific & Technical Instruments", "Security & Protection Services", "Semiconductor Equipment & Materials", "Semiconductors",
+  "Shell Companies", "Silver", "Software - Application", "Software - Infrastructure", "Solar", "Specialty Business Services", "Specialty Chemicals", "Specialty Industrial Machinery", "Specialty Retail", "Staffing & Employment Services", "Steel", "Telecom Services", "Textile Manufacturing", "Thermal Coal", "Tobacco", "Tools & Accessories", "Travel Services", "Trucking", "Uranium", "Utilities - Diversified", "Utilities - Independent Power Producers", "Utilities - Regulated Electric", "Utilities - Regulated Gas", "Utilities - Regulated Water", "Utilities - Renewable", "Waste Management"
+];
 
 const FilterButton = ({ type = 'button', onFiltersChange, ...buttonProps }: FilterButtonProps) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -37,14 +52,36 @@ const FilterButton = ({ type = 'button', onFiltersChange, ...buttonProps }: Filt
   const [filterValues, setFilterValues] = useState<FilterValues>({
     country: [],
     min_price: 0,
-    max_price: 0,
+    max_price: 1000,
     sector: [],
-    sub_sector: []
+    sub_sector: [],
+    activeFilters: {
+      price: false,
+      country: false,
+      sector: false,
+      subSector: false
+    }
   });
 
   const [isCountryDropdownOpen, setIsCountryDropdownOpen] = useState(false);
   const [isSectorDropdownOpen, setIsSectorDropdownOpen] = useState(false);
-  const [isSubSectorDropdownOpen, setIsSubSectorDropdownOpen] = useState(false);
+  const [subSectorSearch, setSubSectorSearch] = useState('');
+
+  // fuzzy searching for sub-sectors
+  const fuse = useMemo(() => new Fuse(SUB_SECTORS, {
+    threshold: 0.4, // Lower = stricter matching, higher = more fuzzy (0.0 - 1.0)
+    distance: 100,
+    minMatchCharLength: 2, // Minimum characters before searching
+    includeScore: true,
+  }), []);
+
+  // Filter sub-sectors based on search input using fuzzy matching - show top 10 matches
+  const filteredSubSectors: string[] = useMemo(() => {
+    if (subSectorSearch.trim().length < 2) return [];
+    
+    const results = fuse.search(subSectorSearch);
+    return results.slice(0, 10).map(result => result.item);
+  }, [subSectorSearch, fuse]);
 
   const handleCheckboxChange = (filterName: keyof Filters) => {
     setFilters(prev => {
@@ -53,10 +90,22 @@ const FilterButton = ({ type = 'button', onFiltersChange, ...buttonProps }: Filt
         [filterName]: !prev[filterName]
       };
       
-      // If unchecking sector, also uncheck subSector
       if (filterName === 'sector' && prev.sector === true) {
         newFilters.subSector = false;
       }
+      
+      setFilterValues(prevValues => {
+        const newFilterValues = {
+          ...prevValues,
+          activeFilters: {
+            ...prevValues.activeFilters,
+            [filterName]: newFilters[filterName],
+            ...(filterName === 'sector' && !newFilters.sector ? { subSector: false } : {})
+          }
+        };
+        onFiltersChange?.(newFilterValues);
+        return newFilterValues;
+      });
       
       return newFilters;
     });
@@ -97,21 +146,13 @@ const FilterButton = ({ type = 'button', onFiltersChange, ...buttonProps }: Filt
     });
   }
 
-  const handlePriceChange = (field: 'min_price' | 'max_price', value: string) => {
+  const handlePriceRangeChange = (values: [number, number]) => {
     setFilterValues(prev => {
-      const numValue = value === '' ? 0 : Number(value);
-      let newFilterValues = { ...prev, [field]: numValue };
-      
-      // Validate: min should not be greater than max
-      if (field === 'min_price' && newFilterValues.max_price > 0 && numValue > newFilterValues.max_price) {
-        newFilterValues.min_price = newFilterValues.max_price;
-      }
-      
-      // Validate: max should not be less than min
-      if (field === 'max_price' && numValue > 0 && numValue < newFilterValues.min_price) {
-        newFilterValues.max_price = newFilterValues.min_price;
-      }
-      
+      const newFilterValues = { 
+        ...prev, 
+        min_price: values[0],
+        max_price: values[1]
+      };
       onFiltersChange?.(newFilterValues);
       return newFilterValues;
     });
@@ -142,27 +183,46 @@ const FilterButton = ({ type = 'button', onFiltersChange, ...buttonProps }: Filt
           
           {filters.price && (
             <div className="filter-expansion">
-              <div className="filter-price-inputs">
-                <div className="filter-price-group">
-                  <label className="filter-price-label">Min</label>
-                  <input
-                    type="number"
-                    className="filter-price-input"
-                    placeholder="0"
-                    min="0"
-                    value={filterValues.min_price || ''}
-                    onChange={(e) => handlePriceChange('min_price', e.target.value)}
-                  />
+              <div className="filter-price-range">
+                <div className="filter-price-labels">
+                  <span className="filter-price-value">${filterValues.min_price}</span>
+                  <span className="filter-price-value">${filterValues.max_price}</span>
                 </div>
-                <div className="filter-price-group">
-                  <label className="filter-price-label">Max</label>
+                <div className="filter-price-slider-container">
+                  <div className="filter-price-track">
+                    <div 
+                      className="filter-price-track-fill"
+                      style={{
+                        left: `${(filterValues.min_price / 1000) * 100}%`,
+                        width: `${((filterValues.max_price - filterValues.min_price) / 1000) * 100}%`
+                      }}
+                    />
+                  </div>
                   <input
-                    type="number"
-                    className="filter-price-input"
-                    placeholder="No max"
+                    type="range"
                     min="0"
-                    value={filterValues.max_price || ''}
-                    onChange={(e) => handlePriceChange('max_price', e.target.value)}
+                    max="1000"
+                    value={filterValues.min_price}
+                    onChange={(e) => {
+                      const newMin = Number(e.target.value);
+                      if (newMin <= filterValues.max_price) {
+                        handlePriceRangeChange([newMin, filterValues.max_price]);
+                      }
+                    }}
+                    className="filter-price-slider filter-price-slider--min"
+                  />
+                  <input
+                    type="range"
+                    min="0"
+                    max="1000"
+                    value={filterValues.max_price}
+                    onChange={(e) => {
+                      const newMax = Number(e.target.value);
+                      if (newMax >= filterValues.min_price) {
+                        handlePriceRangeChange([filterValues.min_price, newMax]);
+                      }
+                    }}
+                    className="filter-price-slider filter-price-slider--max"
                   />
                 </div>
               </div>
@@ -268,22 +328,18 @@ const FilterButton = ({ type = 'button', onFiltersChange, ...buttonProps }: Filt
 
           {filters.subSector && (
             <div className="filter-expansion">
-              <button
-                  type="button"
-                  className="filter-country-dropdown-btn"
-                  onClick={() => setIsSubSectorDropdownOpen(!isSubSectorDropdownOpen)}
-                >
-                  <span>
-                    {filterValues.sub_sector.length === 0 
-                      ? 'Select sub-sectors' 
-                      : `${filterValues.sub_sector.length} selected`}
-                  </span>
-                  <ChevronDown size={16} />
-                </button>
-
-                {isSubSectorDropdownOpen && (
-                  <div className="filter-country-list">
-                    {SUB_SECTORS.map(subSector => (
+              <div className="filter-subsector-autocomplete">
+                <input
+                  type="text"
+                  className="filter-subsector-input"
+                  placeholder="Type to search sub-sectors..."
+                  value={subSectorSearch}
+                  onChange={(e) => setSubSectorSearch(e.target.value)}
+                />
+                
+                {filteredSubSectors.length > 0 && (
+                  <div className="filter-subsector-suggestions">
+                    {filteredSubSectors.map(subSector => (
                       <label key={subSector} className="filter-country-option">
                         <input
                           type="checkbox"
@@ -296,6 +352,27 @@ const FilterButton = ({ type = 'button', onFiltersChange, ...buttonProps }: Filt
                     ))}
                   </div>
                 )}
+
+                {filterValues.sub_sector.length > 0 && (
+                  <div className="filter-subsector-selected">
+                    <span className="filter-subsector-selected-label">Selected:</span>
+                    <div className="filter-subsector-tags">
+                      {filterValues.sub_sector.map(subSector => (
+                        <span key={subSector} className="filter-subsector-tag">
+                          {subSector}
+                          <button
+                            type="button"
+                            className="filter-subsector-tag-remove"
+                            onClick={() => handleSubSectorToggle(subSector)}
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
