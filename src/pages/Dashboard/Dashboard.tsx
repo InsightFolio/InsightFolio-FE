@@ -9,9 +9,8 @@ import HoldingDetailModal from '../../components/portfolio/HoldingDetailModal';
 import type { Holding } from '../../components/portfolio/HoldingsSection';
 import type { PerformancePoint } from '../../components/portfolio/BalanceSection';
 import axios from 'axios';
-import { processTransaction, getStockBySymbol } from '../../services/transactionService';
+import { processTransaction, getStockBySymbol, getUserHoldings } from '../../services/transactionService';
 import { useAuth } from '../../contexts/AuthContext';
-import { generatePerformanceData } from '../../utils/chartHelpers';
 import './Dashboard.css';
 
 type Stock = StockCardProps;
@@ -40,6 +39,7 @@ const Dashboard: React.FC = () => {
   const [selectedStock, setSelectedStock] = useState<Stock | null>(null);
   const [selectedStockId, setSelectedStockId] = useState<number | null>(null);
   const [isHoldingModalOpen, setHoldingModalOpen] = useState(false);
+  const [userHoldings, setUserHoldings] = useState<Holding[]>([]);
   const API_BASE = process.env.REACT_APP_API_URL || 'http://127.0.0.1:5001';
 
   // Require authentication - redirect to login if no user
@@ -51,18 +51,85 @@ const Dashboard: React.FC = () => {
   
   const userId = user?.id || 0;
 
-  const holdingFromStock = (stock: Stock): Holding => ({
-    symbol: stock.symbol,
-    company: stock.company,
-    shares: 0,
-    value: stock.price,
-    growthPercent: stock.changePercent
-  });
+  const stockPerformance: Record<string, PerformancePoint[]> = useMemo(
+    () => ({
+      AAPL: [
+        { label: 'Jan', value: 7800 },
+        { label: 'Feb', value: 8120 },
+        { label: 'Mar', value: 7950 },
+        { label: 'Apr', value: 8280 },
+        { label: 'May', value: 8475 },
+        { label: 'Jun', value: 8620 },
+        { label: 'Jul', value: 8790 },
+        { label: 'Aug', value: 8970 }
+      ],
+      MSFT: [
+        { label: 'Jan', value: 12800 },
+        { label: 'Feb', value: 13250 },
+        { label: 'Mar', value: 13100 },
+        { label: 'Apr', value: 13680 },
+        { label: 'May', value: 13820 },
+        { label: 'Jun', value: 14040 },
+        { label: 'Jul', value: 14300 },
+        { label: 'Aug', value: 14450 }
+      ],
+      NVDA: [
+        { label: 'Jan', value: 14200 },
+        { label: 'Feb', value: 14950 },
+        { label: 'Mar', value: 15120 },
+        { label: 'Apr', value: 15480 },
+        { label: 'May', value: 15810 },
+        { label: 'Jun', value: 16150 },
+        { label: 'Jul', value: 16580 },
+        { label: 'Aug', value: 16840 }
+      ],
+      AMZN: [
+        { label: 'Jan', value: 7120 },
+        { label: 'Feb', value: 7280 },
+        { label: 'Mar', value: 7220 },
+        { label: 'Apr', value: 7440 },
+        { label: 'May', value: 7560 },
+        { label: 'Jun', value: 7690 },
+        { label: 'Jul', value: 7780 },
+        { label: 'Aug', value: 7850 }
+      ]
+    }),
+    []
+  );
+
+  const fallbackPerformance = (value: number): PerformancePoint[] => {
+    const base = value * 0.9;
+    return ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'].map((label, idx) => ({
+      label,
+      value: Math.round(base + (value - base) * (idx / 5))
+    }));
+  };
+
+  const holdingFromStock = (stock: Stock): Holding => {
+    // Check if user already owns this stock
+    const existingHolding = userHoldings.find(h => h.symbol === stock.symbol);
+    
+    console.log('holdingFromStock:', stock.symbol, 'userHoldings:', userHoldings, 'existingHolding:', existingHolding);
+    
+    if (existingHolding) {
+      // Return the actual holding data
+      return existingHolding;
+    }
+    
+    // Stock not owned - return a holding with 0 shares
+    return {
+      symbol: stock.symbol,
+      company: stock.company,
+      shares: 0,
+      value: stock.price,
+      growthPercent: stock.changePercent
+    };
+  };
 
   const modalChartData = useMemo<PerformancePoint[]>(() => {
     if (!selectedStock) return [];
-    return generatePerformanceData(selectedStock.price, selectedStock.changePercent);
-  }, [selectedStock]);
+    return stockPerformance[selectedStock.symbol] || fallbackPerformance(selectedStock.price);
+  }, [selectedStock, stockPerformance]);
 
   useEffect(() => {
     const fetchPopular = async () => {
@@ -99,8 +166,26 @@ const Dashboard: React.FC = () => {
       }
     };
 
+    const fetchHoldings = async () => {
+      if (!userId) return;
+      try {
+        const holdings = await getUserHoldings(userId);
+        const transformed: Holding[] = holdings.map((h: any) => ({
+          symbol: h.symbol,
+          company: h.company_name,
+          shares: h.shares,
+          value: h.total_value,
+          growthPercent: h.growth_percent
+        }));
+        setUserHoldings(transformed);
+      } catch (error) {
+        console.error('Failed to load user holdings:', error);
+      }
+    };
+
     fetchPopular();
-  }, [API_BASE]);
+    fetchHoldings();
+  }, [API_BASE, userId]);
 
   const handleSearch = async (searchText: string, filters: FilterValues) => {
     // Open the modal immediately
@@ -238,7 +323,7 @@ const Dashboard: React.FC = () => {
         onClose={() => setHoldingModalOpen(false)}
         onBuy={handleBuyStock}
         onSell={handleSellStock}
-        isInHoldings={false}
+        isInHoldings={selectedStock ? userHoldings.some(h => h.symbol === selectedStock.symbol) : false}
         currentPrice={selectedStock?.price}
         stockId={selectedStockId || undefined}
       />
