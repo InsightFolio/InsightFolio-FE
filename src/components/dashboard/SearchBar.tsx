@@ -42,23 +42,32 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSubmit }) => {
   const [currentPage, setCurrentPage] = useState(0);
   const suggestionsRef = useRef<HTMLDivElement>(null);
 
-  const RESULTS_PER_PAGE = 10;
-  const MAX_RESULTS = 50;
+  const RESULTS_PER_PAGE = 5;
+  const MAX_RESULTS = 25;
 
   // Fetch all stocks on first character
   const fetchAllStocks = async () => {
-    if (hasFetchedRef.current || isLoadingStocks) return;
+    console.log('fetchAllStocks called');
+    if (hasFetchedRef.current || isLoadingStocks) {
+      console.log('Skipping fetch - already fetched or loading:', { hasFetched: hasFetchedRef.current, isLoading: isLoadingStocks });
+      return;
+    }
     
     setIsLoadingStocks(true);
     hasFetchedRef.current = true;
     
+    const url = `${API_BASE}/stocks/all/symbols`;
+    console.log('Fetching from:', url);
+    
     try {
-      const response = await axios.get(`${API_BASE}/stocks/all/symbols`);
+      const response = await axios.get(url);
+      console.log('Received stocks:', response.data.length, 'items');
       const stocks: StockBasic[] = response.data.map((stock: any) => ({
         symbol: stock.symbol,
         company: stock.company
       }));
       setAllStocks(stocks);
+      console.log('Stocks cached successfully');
     } catch (error) {
       console.error('Failed to fetch stocks:', error);
       hasFetchedRef.current = false; // Allow retry on error
@@ -117,11 +126,14 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSubmit }) => {
   // Handle input change
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
+    console.log('Search input changed:', value, 'Length:', value.length);
+    console.log('hasFetchedRef.current:', hasFetchedRef.current);
     setSearchText(value);
     setCurrentPage(0);
     
     // Fetch stocks on first character
     if (value.length === 1 && !hasFetchedRef.current) {
+      console.log('Triggering fetchAllStocks()...');
       fetchAllStocks();
     }
     
